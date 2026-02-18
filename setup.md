@@ -3,4 +3,4 @@ cd backend
 create a virtual enviroment 
 uv venv
 activate it using -> .venv/scripts/activate
-then uv install
+then uv sync
