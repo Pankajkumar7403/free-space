@@ -23,7 +23,7 @@ uv.lock
 ############################################
 *.log
 db.sqlite3
-media/
+
 staticfiles/
 *.pot
 *.mo
