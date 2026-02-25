@@ -6,7 +6,70 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.0.2",
+    "django-cors-headers>=4.9.0",
+    "django-redis>=6.0.0",
     "djangorestframework>=3.16.1",
+    "djangorestframework-simplejwt>=5.5.1",
+    "factory-boy>=3.3.3",
+    "fakeredis>=2.34.0",
     "psycopg[binary]>=3.3.2",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-django>=4.12.0",
     "python-dotenv>=1.2.1",
+    "python-json-logger>=4.0.0",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.testing"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["apps", "tests"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "--reuse-db",          # pytest-django: reuse DB between runs for speed
+    "-ra",                 # show summary of all non-passing tests
+]
+markers = [
+    "unit: fast, isolated tests with no DB/network",
+    "integration: tests that hit the real DB",
+    "e2e: full API request/response tests",
+    "slow: tests that take more than 1s",
+]
+
+[tool.coverage.run]
+source = ["apps", "core"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/conftest.py",
+    "manage.py",
+]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S101", "S106"]   # allow assert and hardcoded passwords in tests
+"*/factories.py" = ["S106"]
