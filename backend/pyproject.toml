@@ -12,6 +12,7 @@ dependencies = [
     "djangorestframework-simplejwt>=5.5.1",
     "factory-boy>=3.3.3",
     "fakeredis>=2.34.0",
+    "pillow>=12.1.1",
     "psycopg[binary]>=3.3.2",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
@@ -29,7 +30,6 @@ testpaths = ["apps", "tests"]
 addopts = [
     "--strict-markers",
     "--tb=short",
-    "--reuse-db",          # pytest-django: reuse DB between runs for speed
     "-ra",                 # show summary of all non-passing tests
 ]
 markers = [

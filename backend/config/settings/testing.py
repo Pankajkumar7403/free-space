@@ -24,7 +24,7 @@ DATABASES = {
     }
 }
 
-# ── Cache ───────────────────────────────j──────────────────────────────────────
+# ── Cache ─────────────────────────────────────────────────────────────────────
 # Use a local-memory cache so tests never touch Redis.
 CACHES = {
     "default": {
@@ -44,6 +44,6 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 DEFAULT_FILE_STORAGE = "django.core.files.storage.InMemoryStorage"
 
 # ── Security ──────────────────────────────────────────────────────────────────
-SECRET_KEY = "test-secret-key-not-for-production"
+SECRET_KEY = "test-secret-key-not-for-production-must-be-at-least-32-bytes-long-xxxx"
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
