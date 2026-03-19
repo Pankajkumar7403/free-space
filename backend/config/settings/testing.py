@@ -47,3 +47,9 @@ DEFAULT_FILE_STORAGE = "django.core.files.storage.InMemoryStorage"
 SECRET_KEY = "test-secret-key-not-for-production-must-be-at-least-32-bytes-long-xxxx"
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
+
+# ── S3 / Media ────────────────────────────────────────────────────────────────
+# Tests never hit real S3 — storage.py checks this flag
+USE_FAKE_S3 = True
+AWS_STORAGE_BUCKET_NAME = "test-bucket"
+CDN_DOMAIN = "cdn.example.com"
