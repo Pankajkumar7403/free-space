@@ -1,34 +1,27 @@
-# 📁 Location: backend/conftest.py   ← ROOT of your project, same level as manage.py
-#
-# This is the MOST IMPORTANT conftest.py — pytest finds it first.
-# All fixtures here are available to every test in the entire project.
+# 📁 Location: backend/conftest.py
+# ⚠️  CRITICAL: This file must be at the ROOT of your backend/ folder,
+#              the same level as manage.py. Pytest loads this first.
 
-import django
 import pytest
 from rest_framework.test import APIClient
 
 
-# ── Tell pytest-django which settings to use ─────────────────────────────────
-# (Also set in pyproject.toml, but this is belt-and-suspenders)
 def pytest_configure(config):
     import os
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.testing")
 
 
-# ── Database fixtures ─────────────────────────────────────────────────────────
+# ── API client ────────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def api_client() -> APIClient:
-    """Unauthenticated DRF API client."""
     return APIClient()
 
 
 # ── User fixtures (available to ALL apps) ─────────────────────────────────────
-# Defined here so every app's tests can use them without importing.
 
 @pytest.fixture
 def user(db):
-    """Standard active user with followers_only privacy."""
     from apps.users.tests.factories import UserFactory
     return UserFactory()
 
@@ -65,14 +58,44 @@ def verified_user(db):
 
 @pytest.fixture
 def other_user(db):
-    """A second distinct user — useful for follow/block tests."""
     from apps.users.tests.factories import UserFactory
     return UserFactory()
 
 
 @pytest.fixture
 def authenticated_client(user) -> APIClient:
-    """API client force-authenticated as the standard user fixture."""
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
+
+# ── Posts fixtures (available to ALL apps) ────────────────────────────────────
+
+@pytest.fixture
+def post(db, user):
+    from apps.posts.tests.factories import PostFactory
+    return PostFactory(author=user)
+
+
+@pytest.fixture
+def public_post(db, user):
+    from apps.posts.tests.factories import PostFactory
+    return PostFactory(author=user, visibility="public")
+
+
+@pytest.fixture
+def private_post(db, user):
+    from apps.posts.tests.factories import PostFactory
+    return PostFactory(author=user, private=True)
+
+
+@pytest.fixture
+def ready_media(db, user):
+    from apps.posts.tests.factories import MediaFactory
+    return MediaFactory(owner=user)
+
+
+@pytest.fixture
+def pending_media(db, user):
+    from apps.posts.tests.factories import MediaFactory
+    return MediaFactory(owner=user, pending=True)
