@@ -99,3 +99,11 @@ def ready_media(db, user):
 def pending_media(db, user):
     from apps.posts.tests.factories import MediaFactory
     return MediaFactory(owner=user, pending=True)
+
+
+# ── Feed fixtures (available to ALL apps) ─────────────────────────────────────
+
+@pytest.fixture
+def follow_relationship(db, user, other_user):
+    from apps.users.models import Follow
+    return Follow.objects.create(follower=user, following=other_user, status="accepted")

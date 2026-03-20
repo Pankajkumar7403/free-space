@@ -1,3 +1,4 @@
+# 📁 Location: backend/core/redis/client.py
 """
 core/redis/client.py
 ~~~~~~~~~~~~~~~~~~~~
@@ -54,7 +55,7 @@ def get_redis_client():
     if "locmem" in cache_backend or getattr(settings, "USE_FAKEREDIS", False):
         try:
             import fakeredis
-            _redis_client = fakeredis.FakeRedis(decode_responses=True)
+            _redis_client = fakeredis.FakeRedis(decode_responses=True, version=7)
             logger.info("Redis: using fakeredis (test environment)")
             return _redis_client
         except ImportError:
