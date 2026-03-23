@@ -13,7 +13,7 @@ class NotificationFactory(DjangoModelFactory):
     actor = factory.SubFactory("apps.users.tests.factories.UserFactory")
     notification_type = NotificationType.FOLLOW
     message = factory.LazyAttribute(
-        lambda o: f"{o.actor.username} started following you"
+        lambda o: f"{o.actor.username if o.actor else 'Someone'} started following you"
     )
     is_read = False
 

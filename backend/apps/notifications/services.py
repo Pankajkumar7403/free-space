@@ -205,10 +205,10 @@ def _resolve_actor_username(actor_id: Optional[uuid.UUID]) -> Optional[str]:
 
 
 def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
-    from core.redis.client import RedisClient
+    from core.redis.client import get_redis_client
     from apps.notifications.constants import UNREAD_COUNT_REDIS_KEY
     try:
-        RedisClient.get_instance().delete(
+        get_redis_client().delete(
             UNREAD_COUNT_REDIS_KEY.format(user_id=user_id)
         )
     except Exception as exc:

@@ -37,15 +37,11 @@ dependencies = [
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.testing"
+asyncio_mode = "auto"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-testpaths = ["apps", "tests"]
-addopts = [
-    "--strict-markers",
-    "--tb=short",
-    "-ra",                 # show summary of all non-passing tests
-]
+addopts = "--strict-markers -v"
 markers = [
     "unit: fast, isolated tests with no DB/network",
     "integration: tests that hit the real DB",
@@ -54,13 +50,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["apps", "core"]
+source = ["apps"]
 omit = [
     "*/migrations/*",
     "*/tests/*",
-    "*/__pycache__/*",
-    "*/conftest.py",
-    "manage.py",
+    "*/factories.py",
 ]
 branch = true
 

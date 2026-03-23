@@ -12,14 +12,14 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "fs_test_db",
-        "USER": "fs_user",
-        "PASSWORD": "fs_password",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.getenv("POSTGRES_TEST_DB", "fs_test_db"),
+        "USER": os.getenv("POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")),
+        "PASSWORD": os.getenv("POSTGRES_TEST_PASSWORD", os.getenv("POSTGRES_PASSWORD", "qommunity_password")),
+        "HOST": os.getenv("POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")),
+        "PORT": os.getenv("POSTGRES_TEST_PORT", os.getenv("POSTGRES_PORT", "5432")),
         # Wrap every test in a transaction and roll back → no teardown cost.
         "TEST": {
-            "NAME": "fs_test_db",
+            "NAME": os.getenv("POSTGRES_TEST_NAME", "test_fs_test_db"),
         },
     }
 }

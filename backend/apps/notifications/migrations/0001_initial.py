@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
                 ("deleted_at", models.DateTimeField(blank=True, null=True)),
                 (
                     "notification_type",
@@ -93,6 +94,7 @@ class Migration(migrations.Migration):
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
                 ("deleted_at", models.DateTimeField(blank=True, null=True)),
                 ("likes_in_app", models.BooleanField(default=True)),
                 ("likes_push", models.BooleanField(default=True)),
@@ -124,6 +126,7 @@ class Migration(migrations.Migration):
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_deleted", models.BooleanField(db_index=True, default=False)),
                 ("deleted_at", models.DateTimeField(blank=True, null=True)),
                 ("token", models.CharField(db_index=True, max_length=512)),
                 (

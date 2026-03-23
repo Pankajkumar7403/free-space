@@ -45,9 +45,9 @@ def get_unread_notification_count(user_id: uuid.UUID) -> int:
     Return unread count with Redis caching (TTL = 1 hour).
     Redis miss → DB query → cache result.
     """
-    from core.redis.client import RedisClient
+    from core.redis.client import get_redis_client
 
-    redis = RedisClient.get_instance()
+    redis = get_redis_client()
     cache_key = UNREAD_COUNT_REDIS_KEY.format(user_id=user_id)
 
     cached = redis.get(cache_key)

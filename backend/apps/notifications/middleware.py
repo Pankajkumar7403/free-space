@@ -44,10 +44,10 @@ class JWTAuthMiddleware(BaseMiddleware):
         token = token_list[0]
 
         try:
-            # Uses the same JWT utility built in M1/M2 (core/security/jwt.py)
-            from core.security.jwt import verify_access_token
+            # Uses the shared JWT utility from core/security/jwt.py.
+            from core.security.jwt import decode_access_token
 
-            payload = verify_access_token(token)
+            payload = decode_access_token(token)
 
             user_id = payload.get("user_id")
             if not user_id:
