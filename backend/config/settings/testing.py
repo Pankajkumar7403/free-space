@@ -32,6 +32,14 @@ CACHES = {
     }
 }
 
+# ── Channels ──────────────────────────────────────────────────────────────────
+# Use in-memory channel layer so tests don't require Redis.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
+
 # ── Celery ────────────────────────────────────────────────────────────────────
 # Run tasks eagerly (synchronously) so tests don't need a broker.
 CELERY_TASK_ALWAYS_EAGER = True
@@ -39,6 +47,10 @@ CELERY_TASK_EAGER_PROPAGATES = True
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+# ── External services (disabled for tests) ───────────────────────────────────
+FCM_SERVER_KEY = ""
+SENDGRID_API_KEY = ""
 
 # ── Media / Storage ───────────────────────────────────────────────────────────
 USE_S3 = False

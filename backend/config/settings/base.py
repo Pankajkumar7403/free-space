@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -30,6 +31,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "django_prometheus",
     "rest_framework",
     "corsheaders",
@@ -51,7 +53,7 @@ LOCAL_APPS = [
     "apps.common",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = ["daphne"] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # ── Middleware (order matters) ─────────────────────────────────────────────────
 
@@ -120,6 +122,18 @@ DATABASES = {
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.getenv("REDIS_URL", "redis://localhost:6379/1")],
+            # Keep channel layer traffic separate from default cache DB.
+            "capacity": 1500,
+            "expiry": 10,
+        },
+    }
+}
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -147,6 +161,14 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_RESULT_EXTENDED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60   # 30 minutes hard limit
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
+
+CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE.update({
+    "cleanup-old-notifications": {
+        "task": "apps.notifications.tasks.cleanup_old_notifications",
+        "schedule": crontab(hour=3, minute=0),   # daily at 3 AM
+    },
+})
 
 # ── Kafka ─────────────────────────────────────────────────────────────────────
 
@@ -266,7 +288,12 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "false").lower() == "true"
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@qommunity.app")
+EMAIL_SENDER_NAME = "Qommunity"
+
+# ── FCM (Firebase Cloud Messaging) ───────────────────────────────────────────
+FCM_SERVER_KEY = os.getenv("FCM_SERVER_KEY", default="")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
