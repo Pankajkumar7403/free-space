@@ -41,7 +41,15 @@ CELERY_TASK_EAGER_PROPAGATES = True
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # ── Media / Storage ───────────────────────────────────────────────────────────
-DEFAULT_FILE_STORAGE = "django.core.files.storage.InMemoryStorage"
+USE_S3 = False
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.InMemoryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # ── Security ──────────────────────────────────────────────────────────────────
 SECRET_KEY = "test-secret-key-not-for-production-must-be-at-least-32-bytes-long-xxxx"
