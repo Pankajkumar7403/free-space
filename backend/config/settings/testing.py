@@ -12,14 +12,14 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "fs_test_db",
-        "USER": "fs_user",
-        "PASSWORD": "fs_password",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.getenv("POSTGRES_TEST_DB", "fs_test_db"),
+        "USER": os.getenv("POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")),
+        "PASSWORD": os.getenv("POSTGRES_TEST_PASSWORD", os.getenv("POSTGRES_PASSWORD", "qommunity_password")),
+        "HOST": os.getenv("POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")),
+        "PORT": os.getenv("POSTGRES_TEST_PORT", os.getenv("POSTGRES_PORT", "5432")),
         # Wrap every test in a transaction and roll back → no teardown cost.
         "TEST": {
-            "NAME": "fs_test_db",
+            "NAME": os.getenv("POSTGRES_TEST_NAME", "test_fs_test_db"),
         },
     }
 }
@@ -32,6 +32,14 @@ CACHES = {
     }
 }
 
+# ── Channels ──────────────────────────────────────────────────────────────────
+# Use in-memory channel layer so tests don't require Redis.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
+
 # ── Celery ────────────────────────────────────────────────────────────────────
 # Run tasks eagerly (synchronously) so tests don't need a broker.
 CELERY_TASK_ALWAYS_EAGER = True
@@ -40,8 +48,20 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
+# ── External services (disabled for tests) ───────────────────────────────────
+FCM_SERVER_KEY = ""
+SENDGRID_API_KEY = ""
+
 # ── Media / Storage ───────────────────────────────────────────────────────────
-DEFAULT_FILE_STORAGE = "django.core.files.storage.InMemoryStorage"
+USE_S3 = False
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.InMemoryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # ── Security ──────────────────────────────────────────────────────────────────
 SECRET_KEY = "test-secret-key-not-for-production-must-be-at-least-32-bytes-long-xxxx"

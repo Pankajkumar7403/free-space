@@ -5,11 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.42.0",
     "celery>=5.6.2",
     "django>=6.0.2",
     "django-cors-headers>=4.9.0",
+    "django-celery-beat>=2.8.1",
+    "django-celery-results>=2.6.0",
+    "django-elasticsearch-dsl>=8.2",
+    "django-prometheus==2.5.0.dev12",
     "django-redis>=6.0.0",
+    "django-storages[s3]>=1.14.6",
     "djangorestframework>=3.16.1",
+    "elasticsearch>=8.19.2",
     "djangorestframework-simplejwt>=5.5.1",
     "factory-boy>=3.3.3",
     "fakeredis>=2.34.0",
@@ -20,19 +27,21 @@ dependencies = [
     "pytest-django>=4.12.0",
     "python-dotenv>=1.2.1",
     "python-json-logger>=4.0.0",
+    "channels>=4.1",
+    "channels-redis>=4.2",
+    "daphne>=4.1",
+    "pytest-asyncio>=0.23",
+    "sendgrid>=6.11",
+    "firebase-admin>=6.5",
 ]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.testing"
+asyncio_mode = "auto"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-testpaths = ["apps", "tests"]
-addopts = [
-    "--strict-markers",
-    "--tb=short",
-    "-ra",                 # show summary of all non-passing tests
-]
+addopts = "--strict-markers -v"
 markers = [
     "unit: fast, isolated tests with no DB/network",
     "integration: tests that hit the real DB",
@@ -41,13 +50,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["apps", "core"]
+source = ["apps"]
 omit = [
     "*/migrations/*",
     "*/tests/*",
-    "*/__pycache__/*",
-    "*/conftest.py",
-    "manage.py",
+    "*/factories.py",
 ]
 branch = true
 

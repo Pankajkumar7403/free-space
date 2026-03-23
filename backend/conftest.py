@@ -27,6 +27,26 @@ def user(db):
 
 
 @pytest.fixture
+def user_factory(db):
+    from apps.users.tests.factories import UserFactory
+
+    def _create(**kwargs):
+        return UserFactory(**kwargs)
+
+    return _create
+
+
+@pytest.fixture
+def jwt_token_factory():
+    from core.security.jwt import create_token_pair
+
+    def _create(user):
+        return create_token_pair(user)["access"]
+
+    return _create
+
+
+@pytest.fixture
 def staff_user(db):
     from apps.users.tests.factories import UserFactory
     return UserFactory(staff=True)
@@ -75,6 +95,16 @@ def authenticated_client(user) -> APIClient:
 def post(db, user):
     from apps.posts.tests.factories import PostFactory
     return PostFactory(author=user)
+
+
+@pytest.fixture
+def post_factory(db):
+    from apps.posts.tests.factories import PostFactory
+
+    def _create(**kwargs):
+        return PostFactory(**kwargs)
+
+    return _create
 
 
 @pytest.fixture
