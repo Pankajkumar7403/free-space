@@ -33,7 +33,18 @@ dependencies = [
     "pytest-asyncio>=0.23",
     "sendgrid>=6.11",
     "firebase-admin>=6.5",
+    "prometheus-client>=0.24.1",
+    "sentry-sdk[celery,django,redis]>=2.55.0",
+    "drf-spectacular>=0.29.0",
+    "django-ratelimit>=4.1.0",
+    "locust>=2.43.3",
+    "bandit>=1.9.4",
+    "safety>=3.7.0",
+    "gunicorn>=25.1.0",
 ]
+
+[project.optional-dependencies]
+dev = ["locust", "bandit", "safety"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.testing"
