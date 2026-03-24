@@ -1,94 +1,95 @@
 """
 core/middleware/metrics.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-Lightweight metrics middleware.
+Prometheus metrics middleware.
+Records HTTP request duration, total count, and in-progress gauge
+for every request that passes through Django.
 
-In production, this feeds into Prometheus via django-prometheus.
-In dev/test, it's a no-op so no external service is needed.
+Uses the shared metrics registry in core/monitoring/prometheus.py.
 
-Tracks:
-  - http_requests_total (counter, by method/path/status)
-  - http_request_duration_seconds (histogram)
+Registration in settings.py MIDDLEWARE:
+    "core.middleware.metrics.PrometheusMetricsMiddleware",
+    # must be FIRST middleware to capture total latency
 """
 from __future__ import annotations
 
 import logging
 import time
 
-from django.conf import settings
-
 logger = logging.getLogger(__name__)
 
-# Try to import prometheus_client; gracefully skip if not installed
-try:
-    from prometheus_client import Counter, Histogram  # type: ignore[import]
-
-    REQUEST_COUNT = Counter(
-        "http_requests_total",
-        "Total HTTP requests",
-        ["method", "endpoint", "status"],
-    )
-    REQUEST_LATENCY = Histogram(
-        "http_request_duration_seconds",
-        "HTTP request latency in seconds",
-        ["method", "endpoint"],
-        buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
-    )
-    PROMETHEUS_AVAILABLE = True
-except ImportError:
-    PROMETHEUS_AVAILABLE = False
+_SKIP_PATHS = frozenset({"/metrics", "/health/", "/favicon.ico"})
 
 
-class MetricsMiddleware:
+class PrometheusMetricsMiddleware:
     """
-    Record per-request latency and count metrics.
-    No-ops cleanly when prometheus_client is not installed.
+    WSGI/ASGI-compatible metrics middleware.
+    Wraps every request with latency histogram + request counter.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
-        if not PROMETHEUS_AVAILABLE:
-            logger.debug("MetricsMiddleware: prometheus_client not installed, metrics disabled")
+        try:
+            from core.monitoring.prometheus import (
+                HTTP_REQUEST_DURATION,
+                HTTP_REQUEST_IN_PROGRESS,
+                HTTP_REQUEST_TOTAL,
+            )
+            self._duration  = HTTP_REQUEST_DURATION
+            self._in_prog   = HTTP_REQUEST_IN_PROGRESS
+            self._total     = HTTP_REQUEST_TOTAL
+            self._enabled   = True
+        except Exception:
+            self._enabled = False
 
     def __call__(self, request):
-        if not PROMETHEUS_AVAILABLE:
+        if not self._enabled or request.path in _SKIP_PATHS:
             return self.get_response(request)
 
-        start = time.monotonic()
-        response = self.get_response(request)
-        duration = time.monotonic() - start
+        endpoint = self._get_endpoint(request)
+        method   = request.method
 
-        # Normalise path to avoid high-cardinality labels
-        endpoint = _normalise_path(request.path)
+        self._in_prog.labels(method=method, endpoint=endpoint).inc()
+        start = time.perf_counter()
 
-        REQUEST_COUNT.labels(
-            method=request.method,
-            endpoint=endpoint,
-            status=response.status_code,
-        ).inc()
-
-        REQUEST_LATENCY.labels(
-            method=request.method,
-            endpoint=endpoint,
-        ).observe(duration)
+        try:
+            response = self.get_response(request)
+            status   = str(response.status_code)
+        except Exception:
+            status = "500"
+            raise
+        finally:
+            duration = time.perf_counter() - start
+            self._in_prog.labels(method=method, endpoint=endpoint).dec()
+            self._duration.labels(
+                method=method, endpoint=endpoint, status_code=status
+            ).observe(duration)
+            self._total.labels(
+                method=method, endpoint=endpoint, status_code=status
+            ).inc()
 
         return response
 
+    @staticmethod
+    def _get_endpoint(request) -> str:
+        """
+        Return the URL pattern name (e.g. /api/v1/posts/) instead of the
+        raw path - prevents high-cardinality from UUIDs in paths.
+        """
+        try:
+            from django.urls import resolve
+            match = resolve(request.path_info)
+            # Build pattern string from namespace + route
+            ns = f"{match.namespace}:" if match.namespace else ""
+            return f"/{ns}{match.url_name}/"
+        except Exception:
+            # Fallback: strip trailing UUID/int segments
+            parts = request.path.split("/")
+            cleaned = [p for p in parts if not _looks_like_id(p)]
+            return "/".join(cleaned) or "/"
 
-def _normalise_path(path: str) -> str:
-    """
-    Replace UUIDs and numeric IDs in paths to reduce label cardinality.
 
-    /api/v1/users/550e8400-e29b-41d4-a716-446655440000/  →  /api/v1/users/{id}/
-    /api/v1/posts/42/comments/                           →  /api/v1/posts/{id}/comments/
-    """
-    import re
-    # Replace UUIDs
-    path = re.sub(
-        r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-        "{id}",
-        path,
-    )
-    # Replace numeric IDs
-    path = re.sub(r"/\d+(/|$)", r"/{id}\1", path)
-    return path
+def _looks_like_id(segment: str) -> bool:
+    if len(segment) == 36 and segment.count("-") == 4:
+        return True   # UUID
+    return segment.isdigit()
