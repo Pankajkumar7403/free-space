@@ -31,8 +31,9 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    "channels",
     "django_prometheus",
+    "channels",
+    "drf_spectacular",
     "rest_framework",
     "corsheaders",
     "django_elasticsearch_dsl",
@@ -66,10 +67,14 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     # 3. CORS — must be before SessionMiddleware
     "corsheaders.middleware.CorsMiddleware",
-    # 4. Request ID injection + structured logging
+    # 4. Security hardening headers
+    "core.middleware.security_headers.SecurityHeadersMiddleware",
+    # 5. Request ID injection + structured logging
     "core.middleware.request_logging.RequestLoggingMiddleware",
-    # 5. Prometheus metrics
-    "core.middleware.metrics.MetricsMiddleware",
+    # 6. Safety response header injection
+    "apps.common.safety.middleware.CrisisResourceMiddleware",
+    # 7. Prometheus metrics
+    "core.middleware.metrics.PrometheusMetricsMiddleware",
     # 6. Standard Django middleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -213,6 +218,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.pagination.cursor.CursorPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "core.exceptions.handler.custom_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -223,10 +229,64 @@ REST_FRAMEWORK = {
     },
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Qommunity API",
+    "DESCRIPTION": (
+        "Production-grade social media platform designed exclusively for the "
+        "LGBTQ+ community. Built with pride. Engineered for safety. 🏳️‍🌈"
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
+    "CONTACT": {
+        "name": "Qommunity Engineering",
+        "email": "engineering@qommunity.app",
+    },
+    "LICENSE": {"name": "Proprietary"},
+    "SERVERS": [{"url": "https://api.qommunity.app", "description": "Production"}],
+    "TAGS": [
+        {"name": "auth", "description": "Authentication & authorization"},
+        {"name": "users", "description": "User profiles & social graph"},
+        {"name": "posts", "description": "Post CRUD & hashtags"},
+        {"name": "feed", "description": "Home feed & explore"},
+        {"name": "media", "description": "Image & video upload pipeline"},
+        {"name": "notifications", "description": "Real-time & push notifications"},
+        {"name": "gdpr", "description": "GDPR data portability & erasure"},
+    ],
+}
+
 # ── CORS ──────────────────────────────────────────────────────────────────────
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:8000",
+    ).split(",")
+    if origin.strip()
+]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_HEADERS = [
+    "accept", "accept-encoding", "authorization",
+    "content-type", "dnt", "origin", "user-agent",
+    "x-csrftoken", "x-requested-with", "x-app-version",
+]
+
+# ── Prometheus ───────────────────────────────────────────────────────────────
+PROMETHEUS_EXPORT_MIGRATIONS = False
+
+# ── App version (used in health check + Sentry) ─────────────────────────────
+APP_VERSION = os.getenv("APP_VERSION", "0.0.1")
+
+# ── Moderation ───────────────────────────────────────────────────────────────
+MODERATION_BLOCKLIST_PATH = os.getenv("MODERATION_BLOCKLIST_PATH", "")
+MODERATION_BLOCKLIST = [
+    term.strip()
+    for term in os.getenv("MODERATION_BLOCKLIST", "").split(",")
+    if term.strip()
+]
+NSFW_CLASSIFIER_BACKEND = os.getenv("NSFW_CLASSIFIER_BACKEND", "stub")
 
 # ── Internationalisation ──────────────────────────────────────────────────────
 
