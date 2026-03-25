@@ -58,6 +58,8 @@ class SecurityHeadersMiddleware:
             response["Content-Security-Policy"] = self._CSP
 
         # Remove information-leaking headers
-        response.pop("Server",        None)
-        response.pop("X-Powered-By",  None)
+        if "Server" in response:
+            del response["Server"]
+        if "X-Powered-By" in response:
+            del response["X-Powered-By"]
         return response

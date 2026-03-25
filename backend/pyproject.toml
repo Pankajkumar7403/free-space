@@ -92,3 +92,10 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 "*/tests/*" = ["S101", "S106"]   # allow assert and hardcoded passwords in tests
 "*/factories.py" = ["S106"]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "locust>=2.43.3",
+    "safety>=3.7.0",
+]

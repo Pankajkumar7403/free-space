@@ -160,9 +160,24 @@ dependencies = [
     { name = "sentry-sdk", extra = ["celery", "django"] },
 ]
 
+[package.optional-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "locust" },
+    { name = "safety" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "locust" },
+    { name = "safety" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "bandit", specifier = ">=1.9.4" },
+    { name = "bandit", marker = "extra == 'dev'" },
     { name = "boto3", specifier = ">=1.42.0" },
     { name = "celery", specifier = ">=5.6.2" },
     { name = "channels", specifier = ">=4.1" },
@@ -186,6 +201,7 @@ requires-dist = [
     { name = "firebase-admin", specifier = ">=6.5" },
     { name = "gunicorn", specifier = ">=25.1.0" },
     { name = "locust", specifier = ">=2.43.3" },
+    { name = "locust", marker = "extra == 'dev'" },
     { name = "pillow", specifier = ">=12.1.1" },
     { name = "prometheus-client", specifier = ">=0.24.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.2" },
@@ -196,8 +212,17 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "python-json-logger", specifier = ">=4.0.0" },
     { name = "safety", specifier = ">=3.7.0" },
+    { name = "safety", marker = "extra == 'dev'" },
     { name = "sendgrid", specifier = ">=6.11" },
     { name = "sentry-sdk", extras = ["celery", "django", "redis"], specifier = ">=2.55.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "bandit", specifier = ">=1.9.4" },
+    { name = "locust", specifier = ">=2.43.3" },
+    { name = "safety", specifier = ">=3.7.0" },
 ]
 
 [[package]]

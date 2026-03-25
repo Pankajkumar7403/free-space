@@ -16,6 +16,8 @@ import logging
 import uuid
 from typing import Optional
 
+from core.redis.client import RedisClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,6 @@ def is_blocked(*, viewer_id: uuid.UUID, target_id: uuid.UUID) -> bool:
     Uses Redis cache with 5-min TTL for performance.
     """
     from apps.users.models import BlockedUser
-    from core.redis.client import RedisClient
 
     redis   = RedisClient.get_instance()
     fwd_key = f"block:{viewer_id}:{target_id}"
@@ -122,7 +123,6 @@ def log_identity_view(
     Stored in Redis with 7-day TTL.  Used for outing investigations.
     """
     import time
-    from core.redis.client import RedisClient
     from apps.common.safety.constants import (
         IDENTITY_VIEW_AUDIT_KEY,
         IDENTITY_VIEW_AUDIT_TTL,

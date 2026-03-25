@@ -36,6 +36,69 @@ logger = logging.getLogger(__name__)
 _redis_client: Any = None  # module-level singleton
 
 
+class _InMemoryRedis:
+    """Small fallback Redis-like client for tests."""
+
+    def __init__(self):
+        self._store: dict[str, Any] = {}
+        self._sets: dict[str, set[str]] = {}
+
+    def get(self, key: str):
+        return self._store.get(key)
+
+    def set(self, key: str, value: Any, ex: int | None = None):
+        self._store[key] = value
+        return True
+
+    def setex(self, key: str, ttl: int, value: Any):
+        self._store[key] = value
+        return True
+
+    def exists(self, key: str) -> int:
+        return 1 if key in self._store else 0
+
+    def sadd(self, key: str, value: Any):
+        self._sets.setdefault(key, set()).add(str(value))
+        return 1
+
+    def srem(self, key: str, value: Any):
+        self._sets.setdefault(key, set()).discard(str(value))
+        return 1
+
+    def sismember(self, key: str, value: Any) -> bool:
+        return str(value) in self._sets.get(key, set())
+
+    def scard(self, key: str) -> int:
+        return len(self._sets.get(key, set()))
+
+    def delete(self, key: str):
+        self._store.pop(key, None)
+        self._sets.pop(key, None)
+        return 1
+
+    def ping(self) -> bool:
+        return True
+
+    def pipeline(self):
+        return _InMemoryPipeline(self)
+
+
+class _InMemoryPipeline:
+    def __init__(self, client: _InMemoryRedis):
+        self._client = client
+        self._ops: list[tuple[str, str]] = []
+
+    def delete(self, key: str):
+        self._ops.append(("delete", key))
+        return self
+
+    def execute(self):
+        for op, key in self._ops:
+            if op == "delete":
+                self._client.delete(key)
+        return True
+
+
 def get_redis_client():
     """
     Return the module-level Redis client, creating it on first call.
@@ -58,8 +121,10 @@ def get_redis_client():
             _redis_client = fakeredis.FakeRedis(decode_responses=True, version=7)
             logger.info("Redis: using fakeredis (test environment)")
             return _redis_client
-        except ImportError:
-            logger.warning("fakeredis not installed; falling back to real Redis")
+        except Exception as exc:
+            logger.warning("fakeredis unavailable; using in-memory fallback", extra={"error": str(exc)})
+            _redis_client = _InMemoryRedis()
+            return _redis_client
 
     # ── Production/development: use django-redis ──────────────────────────────
     try:
@@ -99,6 +164,14 @@ def reset_client() -> None:
     """
     global _redis_client  # noqa: PLW0603
     _redis_client = None
+
+
+class RedisClient:
+    """Backwards-compatible facade used by app services."""
+
+    @staticmethod
+    def get_instance():
+        return get_redis_client()
 
 
 # ── Module-level shortcut ──────────────────────────────────────────────────────

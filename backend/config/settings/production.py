@@ -8,15 +8,19 @@ Run security check with:
     python manage.py check --deploy --settings=config.settings.production
 """
 import logging
+import os
 
 from .base import *   # noqa: F403
 
 # -- Core ---------------------------------------------------------------------
 DEBUG = False
-SECRET_KEY = env("SECRET_KEY")   # Raises ImproperlyConfigured if missing
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
-APP_VERSION = env("APP_VERSION", default="unknown")
-DJANGO_ENV = env("DJANGO_ENV", default="production")
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is not set in environment variables.")
+
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
+APP_VERSION = os.getenv("APP_VERSION", "unknown")
+DJANGO_ENV = os.getenv("DJANGO_ENV", "production")
 
 # -- HTTPS / Cookie security (OWASP) ------------------------------------------
 SECURE_BROWSER_XSS_FILTER = True
@@ -34,31 +38,20 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
 
 X_FRAME_OPTIONS = "DENY"
 
-# -- Database - pgBouncer compatible ------------------------------------------
-# Use CONN_MAX_AGE=0 so Django doesn't hold persistent connections;
-# pgBouncer handles pooling at the proxy layer.
-DATABASES = {
-    "default": {
-        **env.db("DATABASE_URL"),
-        "CONN_MAX_AGE": 0,
-        "OPTIONS": {
-            "application_name": "qommunity-api",
-            "connect_timeout": 5,
-            "options": "-c statement_timeout=30000",  # 30s query timeout
-        },
-        "TEST": {"NAME": env("TEST_DATABASE_URL", default=None)},
-    }
-}
+# -- Database -----------------------------------------------------------------
+# Keep base DATABASES unless you explicitly override via env in your deploy.
 
 # -- Redis --------------------------------------------------------------------
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env("REDIS_URL", default="redis://localhost:6379/0"),
+        "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "CONNECTION_POOL_KWARGS": {"max_connections": 50},
@@ -72,28 +65,30 @@ CACHES = {
 }
 
 # -- Celery -------------------------------------------------------------------
-CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/2")
-CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/2")
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/2")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/2")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1   # Fair dispatch for long tasks
 CELERY_TASK_ACKS_LATE = True   # Acknowledge only after completion
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 
 # -- CORS ---------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()
+]
 
 # -- Email --------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = env("EMAIL_HOST", default="smtp.sendgrid.net")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.sendgrid.net")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "apikey"
-EMAIL_HOST_PASSWORD = env("SENDGRID_API_KEY", default="")
+EMAIL_HOST_PASSWORD = os.getenv("SENDGRID_API_KEY", "")
 
 # -- Sentry -------------------------------------------------------------------
-SENTRY_DSN = env("SENTRY_DSN", default="")
-SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.10)
-SENTRY_PROFILES_SAMPLE_RATE = env.float("SENTRY_PROFILES_SAMPLE_RATE", default=0.05)
+SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.10"))
+SENTRY_PROFILES_SAMPLE_RATE = float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "0.05"))
 
 # Bootstrap Sentry immediately
 from core.monitoring.sentry import init_sentry   # noqa: E402
@@ -120,17 +115,17 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": env("DJANGO_LOG_LEVEL", default="INFO"),
+        "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
     },
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": env("DJANGO_LOG_LEVEL", default="INFO"),
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "django.db.backends": {
             "handlers": ["console"],
-            "level": env("DB_LOG_LEVEL", default="WARNING"),
+            "level": os.getenv("DB_LOG_LEVEL", "WARNING"),
             "propagate": False,
         },
         "django.security": {

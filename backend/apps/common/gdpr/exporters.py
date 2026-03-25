@@ -97,9 +97,9 @@ def _export_posts(user_id: uuid.UUID) -> list:
             "id":          str(p.id),
             "content":     p.content,
             "visibility":  p.visibility,
-            "location":    p.location,
+            "location":    getattr(p, "location", getattr(p, "location_name", "")),
             "hashtags":    list(p.hashtags.values_list("name", flat=True)),
-            "like_count":  p.like_count,
+            "like_count":  getattr(p, "like_count", 0),
             "created_at":  p.created_at.isoformat(),
         }
         for p in Post.all_objects.filter(author_id=user_id).prefetch_related("hashtags")

@@ -12,6 +12,8 @@ import uuid
 
 from django.db import transaction
 
+from apps.common.gdpr.tasks import cleanup_s3_media, generate_gdpr_export
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,6 @@ def request_data_export(user_id: uuid.UUID) -> str:
     Returns a job ID (UUID string) - the actual export runs in a Celery task.
     The user receives a download link via email when complete.
     """
-    from apps.common.gdpr.tasks import generate_gdpr_export
     from core.monitoring.prometheus import GDPR_EXPORTS
 
     job_id = str(uuid.uuid4())
@@ -88,8 +89,7 @@ def _cascade_delete(user_id: uuid.UUID) -> None:
 
 def _delete_posts(user_id: uuid.UUID) -> None:
     """Hard-delete all posts and queue S3 media cleanup."""
-    from apps.posts.models import Post
-    from apps.media.models import Media
+    from apps.posts.models import Media, Post
 
     media_keys = list(
         Media.objects.filter(owner_id=user_id).values_list(
@@ -102,7 +102,6 @@ def _delete_posts(user_id: uuid.UUID) -> None:
     # Async S3 cleanup
     all_keys = [k for triple in media_keys for k in triple if k]
     if all_keys:
-        from apps.common.gdpr.tasks import cleanup_s3_media
         cleanup_s3_media.delay(all_keys)
 
 

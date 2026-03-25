@@ -254,6 +254,14 @@ SPECTACULAR_SETTINGS = {
         {"name": "notifications", "description": "Real-time & push notifications"},
         {"name": "gdpr", "description": "GDPR data portability & erasure"},
     ],
+    "PREPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.preprocess_exclude_path_format",
+    ],
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+    ],
+    # Reduce noise for APIViews where spectacular can't infer serializer_class.
+    "COMPONENT_NO_READ_SERIALIZER_WARNING": True,
 }
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
