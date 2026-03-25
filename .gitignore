@@ -4,6 +4,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+qommunity_Backend_Roadmap.docx
+Qommunity_Frontend_Roadmap.docx
 
 ############################################
 # Virtual Environments
@@ -11,7 +13,97 @@ __pycache__/
 .venv/
 venv/
 env/
+# ===========================
+# Turborepo
+# ===========================
+.turbo
 
+# ===========================
+# Dependencies
+# ===========================
+node_modules
+.pnpm-store
+.pnpm-debug.log
+
+# ===========================
+# Build Outputs
+# ===========================
+dist
+build
+out
+.next
+.svelte-kit
+.nuxt
+.output
+
+# ===========================
+# Cache & Temp Files
+# ===========================
+*.tsbuildinfo
+.eslintcache
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.*
+!.env.example
+!.env.test
+
+# ===========================
+# OS Generated Files
+# ===========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V7
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===========================
+# IDE & Editor
+# ===========================
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# ===========================
+# Testing & Coverage
+# ===========================
+coverage
+.nyc_output
+*.lcov
+
+# ===========================
+# Yarn (not used, but safety)
+# ===========================
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# ===========================
+# Vercel
+# ===========================
+.vercel
+
+# ===========================
+# Misc
+# ===========================
+*.node
+vendor/
 
 ############################################
 # uv

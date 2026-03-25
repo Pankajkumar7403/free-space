@@ -1,0 +1,4 @@
+# 📍 LOCATION: free-space/frontend/pnpm-workspace.yaml
+packages:
+  - "apps/*"
+  - "packages/*"

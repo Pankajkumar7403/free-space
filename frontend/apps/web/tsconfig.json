@@ -1,0 +1,37 @@
+{
+  "extends": "@qommunity/config/tsconfig/nextjs",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@qommunity/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@qommunity/api-client": [
+        "../../packages/api-client/src/index.ts"
+      ],
+      "@qommunity/validators": [
+        "../../packages/validators/src/index.ts"
+      ],
+      "@qommunity/ui-kit": [
+        "../../packages/ui-kit/src/index.ts"
+      ]
+    },
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.d.ts",
+    "next-env.d.ts",
+    "src",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
