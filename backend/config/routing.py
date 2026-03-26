@@ -4,6 +4,7 @@ config/routing.py
 WebSocket URL patterns.
 Imported by config/asgi.py ProtocolTypeRouter.
 """
+
 from django.urls import re_path
 
 from apps.notifications.consumers import NotificationConsumer

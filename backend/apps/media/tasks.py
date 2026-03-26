@@ -43,7 +43,8 @@ def process_media_task(self, media_id: str) -> None:
     if media.status not in (MediaStatus.UPLOADED, MediaStatus.FAILED):
         logger.warning(
             "process_media_task: Media %s in unexpected status %s, skipping",
-            media_id, media.status,
+            media_id,
+            media.status,
         )
         return
 

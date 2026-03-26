@@ -9,13 +9,12 @@ but we need stand-alone hashing for:
   - API key generation and verification
   - Sensitive data at rest (phone numbers, etc.)
 """
+
 from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 import secrets
-from base64 import urlsafe_b64encode
 
 
 def generate_token(nbytes: int = 32) -> str:

@@ -9,7 +9,7 @@ from apps.posts.constants import PostStatus, PostVisibility
 from apps.posts.exceptions import MediaNotFoundError, PostNotFoundError
 from apps.posts.models import Hashtag, Media, Post
 from apps.users.models import User
-from apps.users.selectors import get_blocked_users, get_following, is_blocked
+from apps.users.selectors import get_following, is_blocked
 
 
 def get_post_by_id(post_id, requesting_user: User | None = None) -> Post:
@@ -19,9 +19,11 @@ def get_post_by_id(post_id, requesting_user: User | None = None) -> Post:
     Raises PostNotFoundError.
     """
     try:
-        post = Post.objects.select_related("author").prefetch_related(
-            "media", "hashtags"
-        ).get(pk=post_id, is_deleted=False, status=PostStatus.PUBLISHED)
+        post = (
+            Post.objects.select_related("author")
+            .prefetch_related("media", "hashtags")
+            .get(pk=post_id, is_deleted=False, status=PostStatus.PUBLISHED)
+        )
     except Post.DoesNotExist:
         raise PostNotFoundError(detail={"post_id": str(post_id)})
 
@@ -35,11 +37,16 @@ def get_posts_by_author(author: User, requesting_user: User | None = None) -> Qu
     """
     All published posts by an author, filtered by visibility rules.
     """
-    qs = Post.objects.filter(
-        author=author,
-        is_deleted=False,
-        status=PostStatus.PUBLISHED,
-    ).select_related("author").prefetch_related("media", "hashtags").order_by("-created_at")
+    qs = (
+        Post.objects.filter(
+            author=author,
+            is_deleted=False,
+            status=PostStatus.PUBLISHED,
+        )
+        .select_related("author")
+        .prefetch_related("media", "hashtags")
+        .order_by("-created_at")
+    )
 
     if requesting_user is None:
         return qs.filter(visibility=PostVisibility.PUBLIC)
@@ -58,12 +65,16 @@ def get_posts_by_author(author: User, requesting_user: User | None = None) -> Qu
 
 def get_posts_by_hashtag(hashtag_name: str) -> QuerySet:
     """All public published posts for a given hashtag (case-insensitive)."""
-    return Post.objects.filter(
-        hashtags__name__iexact=hashtag_name,
-        visibility=PostVisibility.PUBLIC,
-        is_deleted=False,
-        status=PostStatus.PUBLISHED,
-    ).select_related("author").order_by("-created_at")
+    return (
+        Post.objects.filter(
+            hashtags__name__iexact=hashtag_name,
+            visibility=PostVisibility.PUBLIC,
+            is_deleted=False,
+            status=PostStatus.PUBLISHED,
+        )
+        .select_related("author")
+        .order_by("-created_at")
+    )
 
 
 def search_posts(query: str, requesting_user: User | None = None) -> QuerySet:
@@ -81,8 +92,7 @@ def search_posts(query: str, requesting_user: User | None = None) -> QuerySet:
         )
         .annotate(rank=SearchRank("search_vector", search_query))
         .order_by("-rank", "-created_at")
-        .select_related("author")
-        [:100]  # hard cap
+        .select_related("author")[:100]  # hard cap
     )
 
 
@@ -91,9 +101,10 @@ def get_trending_hashtags(limit: int = 20) -> QuerySet:
     Most-used hashtags in the last 7 days.
     Falls back to overall count if no time-windowed data available.
     """
-    from django.utils import timezone
     from datetime import timedelta
+
     from django.db.models import Count
+    from django.utils import timezone
 
     cutoff = timezone.now() - timedelta(days=7)
     return (
@@ -103,8 +114,7 @@ def get_trending_hashtags(limit: int = 20) -> QuerySet:
             posthashtag__post__status=PostStatus.PUBLISHED,
         )
         .annotate(post_count=Count("posthashtag"))
-        .order_by("-post_count")
-        [:limit]
+        .order_by("-post_count")[:limit]
     )
 
 
@@ -124,6 +134,7 @@ def get_media_by_id(media_id, owner: User | None = None) -> Media:
 
 
 # ── Internal helper ───────────────────────────────────────────────────────────
+
 
 def _can_view_post(post: Post, user: User) -> bool:
     """

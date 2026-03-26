@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import BaseUserManager
+
+if TYPE_CHECKING:
+    from apps.users.models import User
 
 
 class UserManager(BaseUserManager):
@@ -19,7 +24,7 @@ class UserManager(BaseUserManager):
         username: str,
         password: str | None = None,
         **extra_fields,
-    ) -> "User":
+    ) -> User:
         if not email:
             raise ValueError("Email address is required.")
         if not username:
@@ -37,7 +42,7 @@ class UserManager(BaseUserManager):
         username: str,
         password: str | None = None,
         **extra_fields,
-    ) -> "User":
+    ) -> User:
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)

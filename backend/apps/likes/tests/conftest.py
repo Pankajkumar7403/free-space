@@ -1,9 +1,10 @@
 # 📁 Location: backend/apps/likes/tests/conftest.py
 
 import pytest
-from apps.users.tests.factories import UserFactory
-from apps.posts.tests.factories import PostFactory
+
 from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
+from apps.users.tests.factories import UserFactory
 
 
 @pytest.fixture

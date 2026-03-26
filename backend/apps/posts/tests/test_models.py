@@ -2,13 +2,13 @@
 # ▶  Run:      pytest apps/posts/tests/test_models.py -v
 
 import uuid
+
 import pytest
 from django.db import IntegrityError
 
-from apps.posts.constants import MediaStatus, MediaType, PostStatus, PostVisibility
-from apps.posts.models import Hashtag, Media, Post, PostHashtag, PostMedia
+from apps.posts.constants import PostStatus, PostVisibility
+from apps.posts.models import Media, Post, PostHashtag, PostMedia
 from apps.posts.tests.factories import HashtagFactory, MediaFactory, PostFactory
-from apps.users.tests.factories import UserFactory
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
 
@@ -100,7 +100,7 @@ class TestMediaModel:
 class TestPostHashtagModel:
     def test_unique_together(self, db, user):
         post = PostFactory(author=user)
-        tag  = HashtagFactory()
+        tag = HashtagFactory()
         PostHashtag.objects.create(post=post, hashtag=tag)
         with pytest.raises(IntegrityError):
             PostHashtag.objects.create(post=post, hashtag=tag)
@@ -113,5 +113,7 @@ class TestPostMediaModel:
         m2 = MediaFactory(owner=user)
         PostMedia.objects.create(post=post, media=m1, position=1)
         PostMedia.objects.create(post=post, media=m2, position=0)
-        positions = list(PostMedia.objects.filter(post=post).values_list("position", flat=True))
+        positions = list(
+            PostMedia.objects.filter(post=post).values_list("position", flat=True)
+        )
         assert positions == sorted(positions)

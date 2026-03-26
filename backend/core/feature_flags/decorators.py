@@ -14,10 +14,10 @@ Usage
     def feed_view(request):
         ...
 """
+
 from __future__ import annotations
 
 import functools
-from typing import Optional
 
 from django.http import JsonResponse
 
@@ -31,6 +31,7 @@ def require_feature(
     Decorator factory.
     If the flag is disabled for the requesting user, returns fallback_status.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -43,10 +44,14 @@ def require_feature(
 
             if not is_enabled(flag_name, user_id=user_id):
                 return JsonResponse(
-                    {"error_code": "FEATURE_NOT_AVAILABLE",
-                     "message": "This feature is not yet available."},
+                    {
+                        "error_code": "FEATURE_NOT_AVAILABLE",
+                        "message": "This feature is not yet available.",
+                    },
                     status=fallback_status,
                 )
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator

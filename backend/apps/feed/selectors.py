@@ -10,11 +10,9 @@ from apps.feed.cache import (
     feed_exists,
     feed_get_page,
 )
-from apps.feed.constants import CELEBRITY_FOLLOWER_THRESHOLD, FeedSource
-from apps.feed.ranking import compute_score, recency_score
+from apps.feed.constants import CELEBRITY_FOLLOWER_THRESHOLD
 from apps.posts.constants import PostStatus, PostVisibility
 from apps.posts.models import Post
-from apps.posts.serializers import PostListSerializer
 from apps.users.models import Follow, User
 from apps.users.selectors import get_blocked_users
 
@@ -24,9 +22,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FeedPage:
     """Result of a single feed page request."""
-    posts:       list
+
+    posts: list
     next_cursor: int | None
-    source:      str       # "redis" | "db"
+    source: str  # "redis" | "db"
 
 
 def get_user_feed(
@@ -47,9 +46,7 @@ def get_user_feed(
     4. Filter out posts from blocked users.
     5. Return FeedPage with posts + next cursor.
     """
-    blocked_ids = set(
-        get_blocked_users(user).values_list("pk", flat=True)
-    )
+    blocked_ids = set(get_blocked_users(user).values_list("pk", flat=True))
 
     # ── Fast path: Redis ──────────────────────────────────────────────────────
     if feed_exists(str(user.pk)):
@@ -70,6 +67,7 @@ def get_user_feed(
 
     # Trigger async warm-up so next request hits Redis
     from apps.feed.tasks import warm_user_feed_task
+
     warm_user_feed_task.delay(user_id=str(user.pk))
 
     return FeedPage(posts=posts, next_cursor=next_cursor, source="db")
@@ -87,8 +85,9 @@ def get_explore_feed(
     """
     blocked_ids = set(get_blocked_users(user).values_list("pk", flat=True))
     following_ids = set(
-        Follow.objects.filter(follower=user, status="accepted")
-        .values_list("following_id", flat=True)
+        Follow.objects.filter(follower=user, status="accepted").values_list(
+            "following_id", flat=True
+        )
     )
 
     post_ids = explore_get_page(cursor=cursor, page_size=page_size + 20)
@@ -119,19 +118,13 @@ def get_explore_feed(
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 def _get_celebrity_posts(user: User, blocked_ids: set) -> list[str]:
     """
     For each celebrity the user follows, fetch their 10 most recent posts.
     This is the fan-out-on-read merge step.
     """
-    celebrity_ids = (
-        Follow.objects.filter(follower=user, status="accepted")
-        .annotate_celebrity()  # annotated in a custom manager — simplified here
-        .values_list("following_id", flat=True)
-    )
-
     # Simplified: query directly
-    from apps.users.models import User as UserModel
     celebrity_following = (
         Follow.objects.filter(follower=user, status="accepted")
         .select_related("following")
@@ -142,13 +135,23 @@ def _get_celebrity_posts(user: User, blocked_ids: set) -> list[str]:
     for follow in celebrity_following:
         author = follow.following
         follower_count = author.follower_set.filter(status="accepted").count()
-        if follower_count > CELEBRITY_FOLLOWER_THRESHOLD and author.pk not in blocked_ids:
-            recent = Post.objects.filter(
-                author=author,
-                status=PostStatus.PUBLISHED,
-                is_deleted=False,
-                visibility__in=[PostVisibility.PUBLIC, PostVisibility.FOLLOWERS_ONLY],
-            ).order_by("-created_at").values_list("id", flat=True)[:10]
+        if (
+            follower_count > CELEBRITY_FOLLOWER_THRESHOLD
+            and author.pk not in blocked_ids
+        ):
+            recent = (
+                Post.objects.filter(
+                    author=author,
+                    status=PostStatus.PUBLISHED,
+                    is_deleted=False,
+                    visibility__in=[
+                        PostVisibility.PUBLIC,
+                        PostVisibility.FOLLOWERS_ONLY,
+                    ],
+                )
+                .order_by("-created_at")
+                .values_list("id", flat=True)[:10]
+            )
             post_ids.extend([str(pid) for pid in recent])
 
     return post_ids
@@ -189,7 +192,9 @@ def _fetch_posts(
             pk__in=post_ids,
             is_deleted=False,
             status=PostStatus.PUBLISHED,
-        ).select_related("author").prefetch_related("media", "hashtags")
+        )
+        .select_related("author")
+        .prefetch_related("media", "hashtags")
     }
 
     result = []
@@ -214,17 +219,23 @@ def _get_feed_from_db(
     DB fallback: fetch posts from followed users ordered by created_at.
     Used when Redis feed is cold/expired.
     """
-    following_ids = Follow.objects.filter(
-        follower=user, status="accepted"
-    ).values_list("following_id", flat=True)
+    following_ids = Follow.objects.filter(follower=user, status="accepted").values_list(
+        "following_id", flat=True
+    )
 
-    qs = Post.objects.filter(
-        author_id__in=following_ids,
-        status=PostStatus.PUBLISHED,
-        is_deleted=False,
-        visibility__in=[PostVisibility.PUBLIC, PostVisibility.FOLLOWERS_ONLY],
-    ).exclude(
-        author_id__in=blocked_ids,
-    ).select_related("author").prefetch_related("media", "hashtags").order_by("-created_at")
+    qs = (
+        Post.objects.filter(
+            author_id__in=following_ids,
+            status=PostStatus.PUBLISHED,
+            is_deleted=False,
+            visibility__in=[PostVisibility.PUBLIC, PostVisibility.FOLLOWERS_ONLY],
+        )
+        .exclude(
+            author_id__in=blocked_ids,
+        )
+        .select_related("author")
+        .prefetch_related("media", "hashtags")
+        .order_by("-created_at")
+    )
 
     return list(qs[cursor : cursor + page_size])

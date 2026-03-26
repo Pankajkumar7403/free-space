@@ -3,6 +3,7 @@ apps/users/tests/conftest.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Fixtures available to all tests inside apps/users/tests/.
 """
+
 import pytest
 from rest_framework.test import APIClient
 

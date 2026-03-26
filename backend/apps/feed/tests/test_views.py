@@ -1,13 +1,11 @@
 # 📁 Location: backend/apps/feed/tests/test_views.py
 # ▶  Run:      pytest apps/feed/tests/test_views.py -v
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from apps.users.tests.factories import UserFactory
-from apps.posts.tests.factories import PostFactory
-from apps.posts.constants import PostVisibility
-from apps.users.models import Follow
 from core.testing.base import BaseAPITestCase
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db]
@@ -62,7 +60,9 @@ class TestExploreFeedView(BaseAPITestCase):
 
     @patch("apps.feed.views.get_explore_feed")
     def test_returns_explore_page(self, mock_explore):
-        mock_explore.return_value = MagicMock(posts=[], next_cursor=None, source="redis")
+        mock_explore.return_value = MagicMock(
+            posts=[], next_cursor=None, source="redis"
+        )
         res = self.client.get(self.url)
         self.assert_ok(res)
         assert "results" in res.data

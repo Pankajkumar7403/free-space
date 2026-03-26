@@ -11,7 +11,7 @@ def validate_device_token(token: str) -> None:
 
 
 def validate_platform(platform: str) -> None:
-    valid = [p.value for p in DevicePlatform]
+    valid = list(DevicePlatform.values)
     if platform not in valid:
         raise ValidationError(
             f"Platform '{platform}' is not supported. Choose from: {valid}."

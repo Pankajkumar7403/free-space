@@ -2,33 +2,31 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from django.db import transaction
 
 from apps.comments.constants import MAX_COMMENT_DEPTH
+from apps.comments.events import emit_comment_created
 from apps.comments.exceptions import (
     CommentDepthExceededError,
     CommentEditForbiddenError,
-    CommentNotFoundError,
     CommentsDisabledError,
 )
 from apps.comments.models import FLAGGED_KEYWORDS, Comment
 from apps.comments.selectors import get_comment_by_id
 from apps.comments.validators import validate_comment_content
 from apps.posts.selectors import get_post_by_id
-from apps.users.models import User
 
-import logging
-from apps.comments.events import emit_comment_created
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class CreateCommentInput:
-    post_id:   object
+    post_id: object
     author_id: object
-    content:   str
+    content: str
     parent_id: object | None = None
 
 
@@ -51,18 +49,18 @@ def create_comment(data: CreateCommentInput) -> Comment:
     from apps.users.selectors import get_user_by_id
 
     validate_comment_content(data.content)
-    post   = get_post_by_id(data.post_id)
+    post = get_post_by_id(data.post_id)
     author = get_user_by_id(data.author_id)
 
     if not post.allow_comments:
         raise CommentsDisabledError()
 
-    depth  = 0
+    depth = 0
     parent = None
 
     if data.parent_id:
         parent = get_comment_by_id(data.parent_id)
-        depth  = parent.depth + 1
+        depth = parent.depth + 1
         if depth > MAX_COMMENT_DEPTH:
             raise CommentDepthExceededError()
 
@@ -117,7 +115,7 @@ def delete_comment(*, comment_id, requesting_user_id) -> None:
     """
     comment = get_comment_by_id(comment_id)
 
-    is_author     = str(comment.author_id) == str(requesting_user_id)
+    is_author = str(comment.author_id) == str(requesting_user_id)
     is_post_owner = str(comment.post.author_id) == str(requesting_user_id)
 
     if not (is_author or is_post_owner):
@@ -139,9 +137,7 @@ def pin_comment(*, comment_id, requesting_user_id) -> Comment:
     comment = get_comment_by_id(comment_id)
 
     if str(comment.post.author_id) != str(requesting_user_id):
-        raise CommentEditForbiddenError(
-            message="Only the post owner can pin comments."
-        )
+        raise CommentEditForbiddenError(message="Only the post owner can pin comments.")
 
     # Unpin any previously pinned comment on this post
     Comment.objects.filter(post=comment.post, is_pinned=True).update(is_pinned=False)
@@ -159,7 +155,7 @@ def hide_comment(*, comment_id, requesting_user_id) -> Comment:
     """
     comment = get_comment_by_id(comment_id)
 
-    is_author     = str(comment.author_id) == str(requesting_user_id)
+    is_author = str(comment.author_id) == str(requesting_user_id)
     is_post_owner = str(comment.post.author_id) == str(requesting_user_id)
 
     if not (is_author or is_post_owner):
@@ -188,5 +184,7 @@ def report_comment(
     comment.save(update_fields=["is_flagged", "updated_at"])
     logger.info(
         "report_comment: comment=%s reported by user=%s reason=%s",
-        comment_id, reporter_id, reason,
+        comment_id,
+        reporter_id,
+        reason,
     )

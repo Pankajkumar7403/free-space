@@ -13,9 +13,16 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("POSTGRES_TEST_DB", "fs_test_db"),
-        "USER": os.getenv("POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")),
-        "PASSWORD": os.getenv("POSTGRES_TEST_PASSWORD", os.getenv("POSTGRES_PASSWORD", "qommunity_password")),
-        "HOST": os.getenv("POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")),
+        "USER": os.getenv(
+            "POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")
+        ),
+        "PASSWORD": os.getenv(
+            "POSTGRES_TEST_PASSWORD",
+            os.getenv("POSTGRES_PASSWORD", "qommunity_password"),
+        ),
+        "HOST": os.getenv(
+            "POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")
+        ),
         "PORT": os.getenv("POSTGRES_TEST_PORT", os.getenv("POSTGRES_PORT", "5432")),
         # Wrap every test in a transaction and roll back → no teardown cost.
         "TEST": {

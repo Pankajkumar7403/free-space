@@ -2,12 +2,12 @@
 # ▶  Run:      pytest apps/feed/tests/test_models.py -v
 
 import uuid
+
 import pytest
 from django.db import IntegrityError
 
 from apps.feed.models import FeedItem, HashtagSubscription
 from apps.posts.models import Hashtag
-from apps.users.tests.factories import UserFactory
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
 

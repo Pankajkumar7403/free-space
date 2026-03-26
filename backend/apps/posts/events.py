@@ -12,19 +12,19 @@ from core.kafka.topics import Topics
 @dataclass
 class PostCreatedEvent(BaseEvent):
     event_type: str = Topics.POST_CREATED
-    post_id:    str = ""
-    author_id:  str = ""
+    post_id: str = ""
+    author_id: str = ""
     visibility: str = ""
 
     def to_key(self) -> str:
-        return self.author_id   # partition by author for ordered delivery
+        return self.author_id  # partition by author for ordered delivery
 
 
 @dataclass
 class PostDeletedEvent(BaseEvent):
     event_type: str = Topics.POST_DELETED
-    post_id:    str = ""
-    author_id:  str = ""
+    post_id: str = ""
+    author_id: str = ""
 
 
 def emit_post_created(post) -> None:

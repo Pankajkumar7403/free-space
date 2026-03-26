@@ -9,11 +9,11 @@ The backend is selected by the NSFW_CLASSIFIER_BACKEND setting:
   "stub"          ->  Always returns PASS (dev/test)
   "local"         ->  Run a local ONNX model (future M8)
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Literal
 
 from django.conf import settings
 
@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ImageModerationResult:
-    action:      ModerationAction
-    severity:    ModerationSeverity
-    confidence:  float          # 0.0 - 1.0
-    label:       str = ""
+    action: ModerationAction
+    severity: ModerationSeverity
+    confidence: float  # 0.0 - 1.0
+    label: str = ""
     explanation: str = ""
 
 
@@ -53,6 +53,7 @@ def _rekognition_classify(s3_key: str) -> ImageModerationResult:
     """Use AWS Rekognition DetectModerationLabels."""
     try:
         import boto3
+
         client = boto3.client(
             "rekognition",
             region_name=getattr(settings, "AWS_S3_REGION_NAME", "us-east-1"),
@@ -74,7 +75,7 @@ def _rekognition_classify(s3_key: str) -> ImageModerationResult:
         # Find highest-confidence explicit label
         top = max(labels, key=lambda x: x["Confidence"])
         confidence = top["Confidence"] / 100.0
-        label      = top["Name"]
+        label = top["Name"]
 
         if confidence >= NSFW_BLOCK_CONFIDENCE:
             return ImageModerationResult(
@@ -99,7 +100,7 @@ def _rekognition_classify(s3_key: str) -> ImageModerationResult:
             "image_classifier.rekognition_failed",
             extra={"s3_key": s3_key, "error": str(exc)},
         )
-        return _pass_result()   # Fail open on errors
+        return _pass_result()  # Fail open on errors
 
 
 def _stub_classify(s3_key: str) -> ImageModerationResult:

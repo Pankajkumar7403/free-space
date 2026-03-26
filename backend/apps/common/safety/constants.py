@@ -9,8 +9,8 @@ CRISIS_RESOURCES: dict[str, dict] = {
         "The Trevor Project": {
             "description": "Crisis intervention for LGBTQ+ youth",
             "phone": "1-866-488-7386",
-            "text":  "Text START to 678-678",
-            "chat":  "https://www.thetrevorproject.org/get-help/",
+            "text": "Text START to 678-678",
+            "chat": "https://www.thetrevorproject.org/get-help/",
         },
         "Crisis Text Line": {
             "description": "24/7 text-based crisis support",
@@ -19,14 +19,14 @@ CRISIS_RESOURCES: dict[str, dict] = {
         "988 Suicide & Crisis Lifeline": {
             "description": "National crisis support",
             "phone": "988",
-            "chat":  "https://988lifeline.org/chat/",
+            "chat": "https://988lifeline.org/chat/",
         },
     },
     "UK": {
         "Switchboard LGBT+": {
             "description": "LGBT+ helpline",
             "phone": "0800 0119 100",
-            "chat":  "https://switchboard.lgbt/",
+            "chat": "https://switchboard.lgbt/",
         },
         "Samaritans": {
             "description": "Emotional support 24/7",
@@ -57,10 +57,14 @@ SAFE_IMAGE_BLUR_VISIBILITIES = frozenset({"followers_only", "close_friends"})
 
 # -- Outing prevention --------------------------------------------------------
 # These fields on User are hidden to non-followers by default
-PRIVATE_IDENTITY_FIELDS = frozenset({
-    "pronouns", "gender_identity", "sexual_orientation",
-})
+PRIVATE_IDENTITY_FIELDS = frozenset(
+    {
+        "pronouns",
+        "gender_identity",
+        "sexual_orientation",
+    }
+)
 
 # Audit log Redis key: who viewed a user's identity
 IDENTITY_VIEW_AUDIT_KEY = "audit:identity_view:{viewer_id}:{profile_id}"
-IDENTITY_VIEW_AUDIT_TTL = 7 * 24 * 3600   # 7 days
+IDENTITY_VIEW_AUDIT_TTL = 7 * 24 * 3600  # 7 days

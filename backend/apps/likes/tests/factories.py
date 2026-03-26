@@ -1,7 +1,7 @@
 # 📁 Location: backend/apps/likes/tests/factories.py
 
 import factory
-from django.contrib.contenttypes.models import ContentType
+
 from apps.likes.models import Like
 from apps.users.tests.factories import UserFactory
 from core.testing.factories import BaseFactory

@@ -1,9 +1,10 @@
 # 📁 Location: backend/apps/feed/tests/conftest.py
 
 import pytest
-from apps.users.tests.factories import UserFactory
+
 from apps.posts.tests.factories import PostFactory
 from apps.users.models import Follow
+from apps.users.tests.factories import UserFactory
 
 
 @pytest.fixture
@@ -24,4 +25,5 @@ def follow_relationship(db, author, follower):
 @pytest.fixture
 def published_post(db, author):
     from apps.posts.constants import PostVisibility
+
     return PostFactory(author=author, visibility=PostVisibility.PUBLIC)

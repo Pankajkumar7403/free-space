@@ -1,15 +1,17 @@
 # 📁 Location: backend/apps/likes/tests/test_services.py
 # ▶  Run:      pytest apps/likes/tests/test_services.py -v
 
-import pytest
 from unittest.mock import patch
-from core.redis.client import get_redis_client, reset_client
-from apps.likes.services import get_like_count, is_liked_by, like_object, unlike_object
+
+import pytest
+
 from apps.likes.exceptions import AlreadyLikedError, NotLikedError
 from apps.likes.models import Like
-from apps.posts.tests.factories import PostFactory
+from apps.likes.services import get_like_count, is_liked_by, like_object, unlike_object
 from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
 from apps.users.tests.factories import UserFactory
+from core.redis.client import get_redis_client, reset_client
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
 
@@ -104,11 +106,13 @@ class TestGetLikeCount:
 
     def test_count_fallback_from_db_on_cache_miss(self, db, user):
         """When Redis is cold, count comes from DB."""
-        from apps.likes.models import Like
         from django.contrib.contenttypes.models import ContentType
+
+        from apps.likes.models import Like
         from apps.posts.models import Post
+
         post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        ct   = ContentType.objects.get_for_model(Post)
+        ct = ContentType.objects.get_for_model(Post)
         Like.objects.create(user=user, content_type=ct, object_id=post.pk)
         # Redis is flushed — count must come from DB
         count = get_like_count(obj=post)

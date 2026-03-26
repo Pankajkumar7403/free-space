@@ -22,29 +22,32 @@ User mix (weights reflect real traffic distribution):
   20%  ContentCreator   - create posts frequently
   10%  PassiveUser      - notifications + profile only
 """
+
 from locust import between, events
 
-from tests.load.scenarios.auth          import AuthScenario
-from tests.load.scenarios.feed          import FeedScenario
-from tests.load.scenarios.posts         import PostsScenario
+from tests.load.scenarios.feed import FeedScenario
 from tests.load.scenarios.notifications import NotificationsScenario
+from tests.load.scenarios.posts import PostsScenario
 
 
 class RegularUser(FeedScenario, PostsScenario, NotificationsScenario):
     """Simulates a typical active community member."""
-    weight    = 70
+
+    weight = 70
     wait_time = between(1, 4)
 
 
 class ContentCreator(PostsScenario, FeedScenario):
     """Simulates a power user who posts frequently."""
-    weight    = 20
+
+    weight = 20
     wait_time = between(0.5, 2)
 
 
 class PassiveUser(NotificationsScenario, FeedScenario):
     """Simulates a user who mostly reads."""
-    weight    = 10
+
+    weight = 10
     wait_time = between(3, 8)
 
 

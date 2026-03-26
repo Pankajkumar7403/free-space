@@ -23,7 +23,6 @@ from apps.posts.serializers import (
     PostListSerializer,
     PostSerializer,
     PresignedUrlRequestSerializer,
-    PresignedUrlResponseSerializer,
     UpdatePostSerializer,
 )
 from apps.posts.services import (
@@ -39,6 +38,7 @@ from core.pagination.cursor import CursorPagination
 
 class PostListCreateView(APIView):
     """GET /api/v1/posts/  POST /api/v1/posts/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -46,7 +46,9 @@ class PostListCreateView(APIView):
         qs = get_posts_by_author(request.user, requesting_user=request.user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(PostListSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            PostListSerializer(page, many=True).data
+        )
 
     def post(self, request: Request) -> Response:
         """Create a new post."""
@@ -54,22 +56,25 @@ class PostListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         d = serializer.validated_data
 
-        post = create_post(CreatePostInput(
-            author_id=request.user.pk,
-            content=d["content"],
-            visibility=d["visibility"],
-            allow_comments=d["allow_comments"],
-            is_anonymous=d["is_anonymous"],
-            location_name=d.get("location_name", ""),
-            latitude=d.get("latitude"),
-            longitude=d.get("longitude"),
-            media_ids=d.get("media_ids", []),
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=request.user.pk,
+                content=d["content"],
+                visibility=d["visibility"],
+                allow_comments=d["allow_comments"],
+                is_anonymous=d["is_anonymous"],
+                location_name=d.get("location_name", ""),
+                latitude=d.get("latitude"),
+                longitude=d.get("longitude"),
+                media_ids=d.get("media_ids", []),
+            )
+        )
         return Response(PostSerializer(post).data, status=status.HTTP_201_CREATED)
 
 
 class PostDetailView(APIView):
     """GET/PATCH/DELETE /api/v1/posts/<post_id>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, post_id) -> Response:
@@ -93,6 +98,7 @@ class PostDetailView(APIView):
 
 class UserPostListView(APIView):
     """GET /api/v1/posts/user/<user_id>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id) -> Response:
@@ -100,11 +106,14 @@ class UserPostListView(APIView):
         qs = get_posts_by_author(author, requesting_user=request.user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(PostListSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            PostListSerializer(page, many=True).data
+        )
 
 
 class PostSearchView(APIView):
     """GET /api/v1/posts/search/?q=<query>"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -114,22 +123,28 @@ class PostSearchView(APIView):
         qs = search_posts(q, requesting_user=request.user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(PostListSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            PostListSerializer(page, many=True).data
+        )
 
 
 class HashtagPostListView(APIView):
     """GET /api/v1/posts/hashtag/<name>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, name: str) -> Response:
         qs = get_posts_by_hashtag(name)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(PostListSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            PostListSerializer(page, many=True).data
+        )
 
 
 class TrendingHashtagsView(APIView):
     """GET /api/v1/posts/hashtags/trending/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -139,8 +154,10 @@ class TrendingHashtagsView(APIView):
 
 # ── Media views ───────────────────────────────────────────────────────────────
 
+
 class MediaPresignView(APIView):
     """POST /api/v1/media/presign/ — get a presigned S3 upload URL."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -154,16 +171,20 @@ class MediaPresignView(APIView):
             file_size=d["file_size"],
             alt_text=d.get("alt_text", ""),
         )
-        return Response({
-            "media_id":   result.media_id,
-            "upload_url": result.upload_url,
-            "expires_in": result.expires_in,
-            "media_type": result.media_type,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "media_id": result.media_id,
+                "upload_url": result.upload_url,
+                "expires_in": result.expires_in,
+                "media_type": result.media_type,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MediaConfirmView(APIView):
     """POST /api/v1/media/<media_id>/confirm/ — notify upload complete."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, media_id) -> Response:

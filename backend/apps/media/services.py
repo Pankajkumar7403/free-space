@@ -7,9 +7,13 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from apps.media.storage import build_cdn_url, build_s3_key, generate_presigned_upload_url
-from apps.posts.constants import MediaStatus
 from apps.media import tasks as media_tasks
+from apps.media.storage import (
+    build_cdn_url,
+    build_s3_key,
+    generate_presigned_upload_url,
+)
+from apps.posts.constants import MediaStatus
 from apps.posts.exceptions import MediaNotFoundError
 from apps.posts.models import Media
 from apps.posts.validators import validate_file_size, validate_media_mime_type
@@ -20,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PresignedUploadResult:
-    media_id:   str
+    media_id: str
     upload_url: str
     expires_in: int
     media_type: str
@@ -44,7 +48,7 @@ def create_media_record(
     media_type = validate_media_mime_type(mime_type)
     validate_file_size(file_size, mime_type)
 
-    s3_key     = build_s3_key("originals", mime_type)
+    s3_key = build_s3_key("originals", mime_type)
     upload_url = generate_presigned_upload_url(s3_key=s3_key, mime_type=mime_type)
 
     media = Media.objects.create(
@@ -120,7 +124,11 @@ def update_media_status(
         media.thumbnail_url = build_cdn_url(thumbnail_key)
         updated_fields += ["thumbnail_key", "thumbnail_url"]
 
-    for field_name, val in [("width", width), ("height", height), ("duration", duration)]:
+    for field_name, val in [
+        ("width", width),
+        ("height", height),
+        ("duration", duration),
+    ]:
         if val is not None:
             setattr(media, field_name, val)
             updated_fields.append(field_name)

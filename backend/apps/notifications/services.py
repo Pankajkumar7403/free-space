@@ -4,18 +4,17 @@ apps/notifications/services.py
 All notification mutations.
 Views and Kafka handlers call these services — never the models directly.
 """
+
 from __future__ import annotations
 
 import logging
 import uuid
-from typing import Optional
 
 from django.db import transaction
 from django.utils import timezone
 
 from apps.notifications.constants import NotificationType
 from apps.notifications.exceptions import (
-    NotificationNotFoundError,
     UnauthorizedNotificationError,
 )
 from apps.notifications.models import (
@@ -30,17 +29,17 @@ logger = logging.getLogger(__name__)
 # ── Message templates (rendered at creation so no join needed at read time) ──
 
 _TEMPLATES: dict[str, str] = {
-    NotificationType.LIKE_POST:     "{actor} liked your post",
-    NotificationType.LIKE_COMMENT:  "{actor} liked your comment",
-    NotificationType.COMMENT:       "{actor} commented on your post",
-    NotificationType.COMMENT_REPLY: "{actor} replied to your comment",
-    NotificationType.FOLLOW:        "{actor} started following you",
-    NotificationType.MENTION:       "{actor} mentioned you",
+    str(NotificationType.LIKE_POST): "{actor} liked your post",
+    str(NotificationType.LIKE_COMMENT): "{actor} liked your comment",
+    str(NotificationType.COMMENT): "{actor} commented on your post",
+    str(NotificationType.COMMENT_REPLY): "{actor} replied to your comment",
+    str(NotificationType.FOLLOW): "{actor} started following you",
+    str(NotificationType.MENTION): "{actor} mentioned you",
 }
 
 # Maps target_content_type_label → (app_label, model)
 _CONTENT_TYPE_MAP: dict[str, tuple[str, str]] = {
-    "posts.Post":       ("posts",    "post"),
+    "posts.Post": ("posts", "post"),
     "comments.Comment": ("comments", "comment"),
 }
 
@@ -48,11 +47,11 @@ _CONTENT_TYPE_MAP: dict[str, tuple[str, str]] = {
 def create_notification(
     *,
     recipient_id: uuid.UUID,
-    actor_id: Optional[uuid.UUID],
+    actor_id: uuid.UUID | None,
     notification_type: str,
-    target_id: Optional[uuid.UUID] = None,
-    target_content_type_label: Optional[str] = None,
-) -> Optional[Notification]:
+    target_id: uuid.UUID | None = None,
+    target_content_type_label: str | None = None,
+) -> Notification | None:
     """
     Create and dispatch a notification.
 
@@ -73,13 +72,14 @@ def create_notification(
     from apps.notifications.dispatchers import dispatch_notification
 
     actor_username = _resolve_actor_username(actor_id)
-    message = _TEMPLATES.get(
-        notification_type, "You have a new notification"
-    ).format(actor=actor_username or "Someone")
+    message = _TEMPLATES.get(notification_type, "You have a new notification").format(
+        actor=actor_username or "Someone"
+    )
 
     content_type = None
     if target_content_type_label and target_content_type_label in _CONTENT_TYPE_MAP:
         from django.contrib.contenttypes.models import ContentType
+
         app_label, model = _CONTENT_TYPE_MAP[target_content_type_label]
         try:
             content_type = ContentType.objects.get(app_label=app_label, model=model)
@@ -104,8 +104,8 @@ def create_notification(
         "notification.created",
         extra={
             "notification_id": str(notification.id),
-            "recipient_id":    str(recipient_id),
-            "type":            notification_type,
+            "recipient_id": str(recipient_id),
+            "type": notification_type,
         },
     )
     return notification
@@ -141,9 +141,7 @@ def mark_all_notifications_read(*, user_id: uuid.UUID) -> int:
     return count
 
 
-def delete_notification(
-    *, notification_id: uuid.UUID, user_id: uuid.UUID
-) -> None:
+def delete_notification(*, notification_id: uuid.UUID, user_id: uuid.UUID) -> None:
     notification = get_notification_by_id(notification_id)
     if notification.recipient_id != user_id:
         raise UnauthorizedNotificationError()
@@ -194,23 +192,24 @@ def update_notification_preferences(
 
 # ── Private helpers ───────────────────────────────────────────────────────────
 
-def _resolve_actor_username(actor_id: Optional[uuid.UUID]) -> Optional[str]:
+
+def _resolve_actor_username(actor_id: uuid.UUID | None) -> str | None:
     if not actor_id:
         return None
     try:
         from apps.users.models import User
+
         return User.objects.only("username").get(id=actor_id).username
     except Exception:
         return None
 
 
 def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
-    from core.redis.client import get_redis_client
     from apps.notifications.constants import UNREAD_COUNT_REDIS_KEY
+    from core.redis.client import get_redis_client
+
     try:
-        get_redis_client().delete(
-            UNREAD_COUNT_REDIS_KEY.format(user_id=user_id)
-        )
+        get_redis_client().delete(UNREAD_COUNT_REDIS_KEY.format(user_id=user_id))
     except Exception as exc:
         logger.warning(
             "notification.cache_invalidation_failed",

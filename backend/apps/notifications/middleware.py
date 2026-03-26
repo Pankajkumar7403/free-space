@@ -13,6 +13,7 @@ scope["user"] before the consumer's connect() is called.
 If the token is absent or invalid, scope["user"] is set to AnonymousUser.
 The consumer is responsible for rejecting anonymous users with close(4001).
 """
+
 from __future__ import annotations
 
 import logging

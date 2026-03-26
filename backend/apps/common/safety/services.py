@@ -10,11 +10,11 @@ Features
 3. Crisis resource inject- surface resources when crisis content detected
 4. Anonymous post guard  - strip all identity from anonymous posts
 """
+
 from __future__ import annotations
 
 import logging
 import uuid
-from typing import Optional
 
 from core.redis.client import RedisClient
 
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 # -- Blocking propagation -----------------------------------------------------
 
+
 def is_blocked(*, viewer_id: uuid.UUID, target_id: uuid.UUID) -> bool:
     """
     Return True if viewer has blocked target OR target has blocked viewer.
@@ -30,7 +31,7 @@ def is_blocked(*, viewer_id: uuid.UUID, target_id: uuid.UUID) -> bool:
     """
     from apps.users.models import BlockedUser
 
-    redis   = RedisClient.get_instance()
+    redis = RedisClient.get_instance()
     fwd_key = f"block:{viewer_id}:{target_id}"
     rev_key = f"block:{target_id}:{viewer_id}"
 
@@ -64,12 +65,14 @@ def filter_queryset_for_blocks(
     from apps.users.models import BlockedUser
 
     blocked_ids = list(
-        BlockedUser.objects.filter(blocker_id=viewer_id)
-        .values_list("blocked_id", flat=True)
+        BlockedUser.objects.filter(blocker_id=viewer_id).values_list(
+            "blocked_id", flat=True
+        )
     )
     blocking_ids = list(
-        BlockedUser.objects.filter(blocked_id=viewer_id)
-        .values_list("blocker_id", flat=True)
+        BlockedUser.objects.filter(blocked_id=viewer_id).values_list(
+            "blocker_id", flat=True
+        )
     )
     all_excluded = set(blocked_ids) | set(blocking_ids)
 
@@ -80,10 +83,11 @@ def filter_queryset_for_blocks(
 
 # -- Outing prevention --------------------------------------------------------
 
+
 def get_visible_identity_fields(
     *,
     profile_user_id: uuid.UUID,
-    viewer_id: Optional[uuid.UUID],
+    viewer_id: uuid.UUID | None,
 ) -> set[str]:
     """
     Return the set of identity fields visible to viewer.
@@ -101,9 +105,10 @@ def get_visible_identity_fields(
         return set()
 
     if str(viewer_id) == str(profile_user_id):
-        return PRIVATE_IDENTITY_FIELDS   # owner sees all
+        return set(PRIVATE_IDENTITY_FIELDS)  # owner sees all
 
     from apps.users.models import Follow
+
     is_follower = Follow.objects.filter(
         follower_id=viewer_id,
         following_id=profile_user_id,
@@ -112,32 +117,32 @@ def get_visible_identity_fields(
     if not is_follower:
         return set()
 
-    return PRIVATE_IDENTITY_FIELDS   # followers see all; per-field granularity in M8
+    return set(
+        PRIVATE_IDENTITY_FIELDS
+    )  # followers see all; per-field granularity in M8
 
 
-def log_identity_view(
-    *, viewer_id: uuid.UUID, profile_id: uuid.UUID
-) -> None:
+def log_identity_view(*, viewer_id: uuid.UUID, profile_id: uuid.UUID) -> None:
     """
     Audit log: record who viewed a user's identity fields.
     Stored in Redis with 7-day TTL.  Used for outing investigations.
     """
     import time
+
     from apps.common.safety.constants import (
         IDENTITY_VIEW_AUDIT_KEY,
         IDENTITY_VIEW_AUDIT_TTL,
     )
 
     redis = RedisClient.get_instance()
-    key   = IDENTITY_VIEW_AUDIT_KEY.format(
-        viewer_id=viewer_id, profile_id=profile_id
-    )
+    key = IDENTITY_VIEW_AUDIT_KEY.format(viewer_id=viewer_id, profile_id=profile_id)
     redis.setex(key, IDENTITY_VIEW_AUDIT_TTL, str(time.time()))
 
 
 # -- Crisis resources ---------------------------------------------------------
 
-def get_crisis_resources_for_request(request) -> Optional[dict]:
+
+def get_crisis_resources_for_request(request) -> dict | None:
     """
     Return crisis resources based on request's Accept-Language / GEO header.
     Used by post/comment creation views when crisis content is detected.
@@ -145,10 +150,8 @@ def get_crisis_resources_for_request(request) -> Optional[dict]:
     from apps.common.safety.constants import CRISIS_RESOURCES
 
     accept_lang = request.META.get("HTTP_ACCEPT_LANGUAGE", "")
-    lang_code   = accept_lang.split(",")[0].split("-")[0].upper() if accept_lang else ""
-
     # Map lang -> locale
     locale_map = {"EN-US": "US", "EN-GB": "UK", "HI": "IN", "EN-IN": "IN"}
-    locale     = locale_map.get(accept_lang.split(",")[0].upper(), "DEFAULT")
+    locale = locale_map.get(accept_lang.split(",")[0].upper(), "DEFAULT")
 
     return CRISIS_RESOURCES.get(locale) or CRISIS_RESOURCES.get("DEFAULT")

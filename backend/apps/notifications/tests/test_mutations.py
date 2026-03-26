@@ -1,8 +1,8 @@
 import uuid
+
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
-from unittest.mock import patch
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def api_client():
 
 @pytest.fixture
 def auth_client(api_client, user_factory, jwt_token_factory):
-    user  = user_factory()
+    user = user_factory()
     token = jwt_token_factory(user)
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
     return api_client, user
@@ -67,10 +67,11 @@ class TestMarkReadAPI:
 
     def test_mark_wrong_user_403(self, auth_client, notification_factory):
         client, _ = auth_client
-        other_notif = notification_factory()   # different recipient
+        other_notif = notification_factory()  # different recipient
         response = client.patch(f"/api/v1/notifications/{other_notif.id}/")
         assert response.status_code in (
-            status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_mark_nonexistent_404(self, auth_client):
@@ -101,7 +102,8 @@ class TestDeleteNotificationAPI:
         notif = notification_factory()
         response = client.delete(f"/api/v1/notifications/{notif.id}/")
         assert response.status_code in (
-            status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
 
@@ -148,7 +150,9 @@ class TestDeviceTokenAPI:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_deregister_token_204(self, auth_client, device_token_factory, user_factory):
+    def test_deregister_token_204(
+        self, auth_client, device_token_factory, user_factory
+    ):
         client, user = auth_client
         device_token_factory(user=user, token="to-remove")
         response = client.delete(

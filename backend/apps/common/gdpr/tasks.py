@@ -20,10 +20,14 @@ def generate_gdpr_export(self, user_id: str, job_id: str) -> None:
         download_url = export_user_data(uuid.UUID(user_id))
         _send_export_ready_email(user_id, download_url)
         GDPR_EXPORTS.labels(status="completed").inc()
-        logger.info("gdpr.export.completed", extra={"user_id": user_id, "job_id": job_id})
+        logger.info(
+            "gdpr.export.completed", extra={"user_id": user_id, "job_id": job_id}
+        )
     except Exception as exc:
         GDPR_EXPORTS.labels(status="failed").inc()
-        logger.error("gdpr.export.failed", extra={"user_id": user_id, "error": str(exc)})
+        logger.error(
+            "gdpr.export.failed", extra={"user_id": user_id, "error": str(exc)}
+        )
         raise self.retry(exc=exc)
 
 
@@ -32,14 +36,17 @@ def cleanup_s3_media(keys: list[str]) -> None:
     """Batch-delete S3 objects left over from an account deletion."""
     if not keys:
         return
-    from apps.media.storage import S3Storage
-    S3Storage.get_instance().delete_media_objects(keys)
+    from apps.media.storage import delete_s3_object
+
+    for key in keys:
+        delete_s3_object(key)
     logger.info("gdpr.s3_cleanup.done", extra={"count": len(keys)})
 
 
 def _send_export_ready_email(user_id: str, download_url: str) -> None:
-    from apps.users.models import User
     from django.conf import settings
+
+    from apps.users.models import User
 
     try:
         user = User.objects.get(id=uuid.UUID(user_id))
@@ -50,7 +57,7 @@ def _send_export_ready_email(user_id: str, download_url: str) -> None:
         import sendgrid
         from sendgrid.helpers.mail import Mail
 
-        sg   = sendgrid.SendGridAPIClient(api_key=sg_key)
+        sg = sendgrid.SendGridAPIClient(api_key=sg_key)
         mail = Mail(
             from_email=settings.DEFAULT_FROM_EMAIL,
             to_emails=user.email,

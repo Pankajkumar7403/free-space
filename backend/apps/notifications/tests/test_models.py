@@ -1,6 +1,8 @@
 import uuid
+
 import pytest
-from apps.notifications.constants import DevicePlatform, NotificationType
+
+from apps.notifications.constants import DevicePlatform
 from apps.notifications.models import DeviceToken, Notification, NotificationPreference
 
 
@@ -35,8 +37,8 @@ class TestNotificationModel:
 
     def test_ordering_newest_first(self, notification_factory, user_factory):
         user = user_factory()
-        n1 = notification_factory(recipient=user)
-        n2 = notification_factory(recipient=user)
+        notification_factory(recipient=user)
+        notification_factory(recipient=user)
         results = list(Notification.objects.filter(recipient=user))
         # n2 was created after n1, so it should appear first
         assert results[0].created_at >= results[1].created_at

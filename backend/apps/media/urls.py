@@ -1,7 +1,5 @@
-from django.urls import path
-
 app_name = "media"
 
-urlpatterns = [
+urlpatterns: list = [
     # Media endpoints are defined here when implemented.
 ]

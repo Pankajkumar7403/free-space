@@ -24,14 +24,15 @@ def _member_key(user_id: str, content_type: str, object_id: str) -> str:
 
 # ── Write ─────────────────────────────────────────────────────────────────────
 
+
 def like_incr(content_type: str, object_id: str, user_id: str) -> int:
     """
     Atomically increment the like counter and mark this user as having liked.
     Returns the new count.
     """
     client = get_redis_client()
-    pipe   = client.pipeline()
-    count_key  = _count_key(content_type, object_id)
+    pipe = client.pipeline()
+    count_key = _count_key(content_type, object_id)
     member_key = _member_key(user_id, content_type, object_id)
     pipe.incr(count_key)
     pipe.expire(count_key, LIKE_COUNTER_TTL)
@@ -46,8 +47,8 @@ def like_decr(content_type: str, object_id: str, user_id: str) -> int:
     Returns the new count (floor 0).
     """
     client = get_redis_client()
-    pipe   = client.pipeline()
-    count_key  = _count_key(content_type, object_id)
+    pipe = client.pipeline()
+    count_key = _count_key(content_type, object_id)
     member_key = _member_key(user_id, content_type, object_id)
     pipe.decr(count_key)
     pipe.delete(member_key)
@@ -62,11 +63,12 @@ def like_decr(content_type: str, object_id: str, user_id: str) -> int:
 def set_like_count(content_type: str, object_id: str, count: int) -> None:
     """Called by the DB reconciliation task to sync count from DB to Redis."""
     client = get_redis_client()
-    key    = _count_key(content_type, object_id)
+    key = _count_key(content_type, object_id)
     client.set(key, count, ex=LIKE_COUNTER_TTL)
 
 
 # ── Read ──────────────────────────────────────────────────────────────────────
+
 
 def get_like_count(content_type: str, object_id: str) -> int | None:
     """
@@ -79,6 +81,4 @@ def get_like_count(content_type: str, object_id: str) -> int | None:
 
 def has_user_liked(user_id: str, content_type: str, object_id: str) -> bool:
     """Check if a specific user has liked this object."""
-    return get_redis_client().exists(
-        _member_key(user_id, content_type, object_id)
-    ) == 1
+    return get_redis_client().exists(_member_key(user_id, content_type, object_id)) == 1

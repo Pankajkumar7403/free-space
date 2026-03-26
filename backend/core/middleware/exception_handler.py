@@ -8,6 +8,7 @@ This is the LAST safety net.  DRF's exception handler handles API errors;
 this handles Django-level 500s (database errors, programming mistakes, etc.)
 that would otherwise return an ugly HTML page.
 """
+
 from __future__ import annotations
 
 import logging

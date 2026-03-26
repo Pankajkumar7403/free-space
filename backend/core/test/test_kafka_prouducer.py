@@ -7,6 +7,7 @@ Tests for core/kafka/producer.py
 
 Uses MockKafkaProducer — no real Kafka broker needed.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -62,7 +63,7 @@ class TestMockKafkaProducer:
 
     def test_flush_does_not_raise(self):
         producer = get_producer()
-        producer.flush()   # should be a no-op
+        producer.flush()  # should be a no-op
 
 
 class TestBaseEvent:
@@ -74,7 +75,7 @@ class TestBaseEvent:
     def test_event_has_timestamp(self):
         e = BaseEvent(event_type="test")
         assert e.timestamp is not None
-        assert "T" in e.timestamp   # ISO 8601
+        assert "T" in e.timestamp  # ISO 8601
 
     def test_to_dict_returns_serialisable_dict(self):
         e = BaseEvent(event_type="test.created", version="1.0")

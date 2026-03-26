@@ -1,8 +1,9 @@
-from pathlib import Path
 import os
-from dotenv import load_dotenv
 from datetime import timedelta
+from pathlib import Path
+
 from celery.schedules import crontab
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -27,7 +28,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.postgres"
+    "django.contrib.postgres",
 ]
 
 THIRD_PARTY_APPS = [
@@ -147,7 +148,7 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "SOCKET_CONNECT_TIMEOUT": 5,
             "SOCKET_TIMEOUT": 5,
-            "IGNORE_EXCEPTIONS": True,   # cache miss on Redis error, don't crash
+            "IGNORE_EXCEPTIONS": True,  # cache miss on Redis error, don't crash
         },
         "KEY_PREFIX": "qommunity",
     }
@@ -164,16 +165,18 @@ CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "Asia/Kolkata")
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_RESULT_EXTENDED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60   # 30 minutes hard limit
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
 
 CELERY_BEAT_SCHEDULE = {}
-CELERY_BEAT_SCHEDULE.update({
-    "cleanup-old-notifications": {
-        "task": "apps.notifications.tasks.cleanup_old_notifications",
-        "schedule": crontab(hour=3, minute=0),   # daily at 3 AM
-    },
-})
+CELERY_BEAT_SCHEDULE.update(
+    {
+        "cleanup-old-notifications": {
+            "task": "apps.notifications.tasks.cleanup_old_notifications",
+            "schedule": crontab(hour=3, minute=0),  # daily at 3 AM
+        },
+    }
+)
 
 # ── Kafka ─────────────────────────────────────────────────────────────────────
 
@@ -182,9 +185,7 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 
 # ── Elasticsearch ──────────────────────────────────────────────────────────────
 ELASTICSEARCH_DSL = {
-    "default": {
-        "hosts": os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
-    },
+    "default": {"hosts": os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")},
 }
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -276,9 +277,16 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_HEADERS = [
-    "accept", "accept-encoding", "authorization",
-    "content-type", "dnt", "origin", "user-agent",
-    "x-csrftoken", "x-requested-with", "x-app-version",
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-app-version",
 ]
 
 # ── Prometheus ───────────────────────────────────────────────────────────────
@@ -350,7 +358,9 @@ else:
     MEDIA_URL = "/media/"
 
 # ── Email ─────────────────────────────────────────────────────────────────────
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")

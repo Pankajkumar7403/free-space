@@ -10,6 +10,7 @@ It polls Kafka, handles events, and persists+dispatches notifications.
 
 Graceful shutdown is handled via SIGTERM / SIGINT (Ctrl-C).
 """
+
 from __future__ import annotations
 
 import logging

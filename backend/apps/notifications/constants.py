@@ -2,6 +2,7 @@
 All notification-domain constants, enums, and Redis key patterns.
 Single source of truth - import from here everywhere.
 """
+
 from django.db import models
 
 

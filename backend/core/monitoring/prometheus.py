@@ -10,7 +10,8 @@ Metrics naming convention (Prometheus best practices):
 Import these objects wherever you need to record a metric - they are
 module-level singletons, safe for multi-process use via prometheus_client.
 """
-from prometheus_client import Counter, Gauge, Histogram, Summary
+
+from prometheus_client import Counter, Gauge, Histogram
 
 # -- HTTP ---------------------------------------------------------------------
 
@@ -52,7 +53,7 @@ DB_SLOW_QUERY_TOTAL = Counter(
 REDIS_OPERATIONS_TOTAL = Counter(
     "qommunity_redis_operations_total",
     "Redis operations by type",
-    labelnames=["operation", "result"],   # result: hit | miss | error
+    labelnames=["operation", "result"],  # result: hit | miss | error
 )
 
 REDIS_CONNECTION_ERRORS = Counter(
@@ -91,7 +92,7 @@ KAFKA_PRODUCE_ERRORS = Counter(
 CELERY_TASKS_TOTAL = Counter(
     "qommunity_celery_tasks_total",
     "Celery tasks executed",
-    labelnames=["task_name", "state"],    # state: success | failure | retry
+    labelnames=["task_name", "state"],  # state: success | failure | retry
 )
 
 CELERY_TASK_DURATION = Histogram(
@@ -125,7 +126,7 @@ WS_MESSAGES_SENT = Counter(
 NOTIFICATIONS_DISPATCHED = Counter(
     "qommunity_notifications_dispatched_total",
     "Notifications dispatched by type and channel",
-    labelnames=["notification_type", "channel"],   # channel: ws | fcm | email
+    labelnames=["notification_type", "channel"],  # channel: ws | fcm | email
 )
 
 POSTS_CREATED = Counter(
@@ -137,17 +138,20 @@ POSTS_CREATED = Counter(
 FEED_CACHE_HIT_RATE = Counter(
     "qommunity_feed_cache_operations_total",
     "Feed Redis cache operations",
-    labelnames=["result"],    # hit | miss | cold
+    labelnames=["result"],  # hit | miss | cold
 )
 
 MODERATION_ACTIONS = Counter(
     "qommunity_moderation_actions_total",
     "Content moderation decisions",
-    labelnames=["action", "severity"],    # action: block|warn|pass  severity: high|medium|low
+    labelnames=[
+        "action",
+        "severity",
+    ],  # action: block|warn|pass  severity: high|medium|low
 )
 
 GDPR_EXPORTS = Counter(
     "qommunity_gdpr_exports_total",
     "GDPR data export requests",
-    labelnames=["status"],    # requested | completed | failed
+    labelnames=["status"],  # requested | completed | failed
 )

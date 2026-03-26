@@ -8,6 +8,7 @@ Handles both HTTP (Django) and WebSocket (Django Channels) traffic.
 WebSocket URL patterns are defined in config/routing.py.
 JWT auth is applied to all WebSocket connections via JWTAuthMiddleware.
 """
+
 import os
 
 from django.core.asgi import get_asgi_application

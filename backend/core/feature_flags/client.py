@@ -24,19 +24,19 @@ Usage
     if GRAPHQL.check(user_id=user.id):
         ...
 """
+
 from __future__ import annotations
 
 import hashlib
 import logging
 import uuid
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 # Redis key patterns
 _KEY_ENABLED = "feature:{name}:enabled"
-_KEY_USERS   = "feature:{name}:users"
-_KEY_PCT     = "feature:{name}:pct"
+_KEY_USERS = "feature:{name}:users"
+_KEY_PCT = "feature:{name}:pct"
 
 
 class FeatureFlag:
@@ -45,7 +45,7 @@ class FeatureFlag:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def check(self, user_id: Optional[uuid.UUID | str] = None) -> bool:
+    def check(self, user_id: uuid.UUID | str | None = None) -> bool:
         return is_enabled(self.name, user_id=user_id)
 
     def enable(self) -> None:
@@ -73,14 +73,14 @@ class FeatureFlag:
         """Return current flag configuration."""
         r = _get_redis()
         return {
-            "name":       self.name,
-            "global":     bool(r.get(_KEY_ENABLED.format(name=self.name))),
+            "name": self.name,
+            "global": bool(r.get(_KEY_ENABLED.format(name=self.name))),
             "percentage": int(r.get(_KEY_PCT.format(name=self.name)) or 0),
             "user_count": r.scard(_KEY_USERS.format(name=self.name)),
         }
 
 
-def is_enabled(name: str, user_id: Optional[uuid.UUID | str] = None) -> bool:
+def is_enabled(name: str, user_id: uuid.UUID | str | None = None) -> bool:
     """
     Return True if the feature is enabled for the given user (or globally).
     Safe to call even if Redis is down - returns False on error.
@@ -101,7 +101,8 @@ def is_enabled(name: str, user_id: Optional[uuid.UUID | str] = None) -> bool:
         if raw_pct and user_id:
             pct = int(raw_pct)
             user_hash = int(
-                hashlib.md5(str(user_id).encode(), usedforsecurity=False).hexdigest(), 16
+                hashlib.md5(str(user_id).encode(), usedforsecurity=False).hexdigest(),
+                16,
             )
             return (user_hash % 100) < pct
 
@@ -117,4 +118,5 @@ def is_enabled(name: str, user_id: Optional[uuid.UUID | str] = None) -> bool:
 
 def _get_redis():
     from core.redis.client import RedisClient
+
     return RedisClient.get_instance()

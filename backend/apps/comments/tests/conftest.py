@@ -1,10 +1,11 @@
 # 📁 Location: backend/apps/comments/tests/conftest.py
 
 import pytest
-from apps.posts.tests.factories import PostFactory
-from apps.posts.constants import PostVisibility
-from apps.users.tests.factories import UserFactory
+
 from apps.comments.tests.factories import CommentFactory
+from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
+from apps.users.tests.factories import UserFactory
 
 
 @pytest.fixture

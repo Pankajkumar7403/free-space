@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from apps.feed.constants import CELEBRITY_FOLLOWER_THRESHOLD, FEED_MAX_SIZE, FEED_TTL_SECONDS
+from apps.feed.constants import FEED_MAX_SIZE, FEED_TTL_SECONDS
 from core.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -14,14 +14,17 @@ logger = logging.getLogger(__name__)
 # feed:warm:{user_id}       str   — flag: feed has been warmed up
 # explore:trending          ZSet  — post_id → score (global explore feed)
 
+
 def _feed_key(user_id: str) -> str:
     return f"feed:{user_id}"
+
 
 def _warm_key(user_id: str) -> str:
     return f"feed:warm:{user_id}"
 
 
 # ── Write helpers ─────────────────────────────────────────────────────────────
+
 
 def feed_push_post(user_id: str, post_id: str, score: float) -> None:
     """
@@ -66,6 +69,7 @@ def feed_delete(user_id: str) -> None:
 
 # ── Read helpers ──────────────────────────────────────────────────────────────
 
+
 def feed_get_page(
     user_id: str,
     cursor: int = 0,
@@ -98,6 +102,7 @@ def feed_size(user_id: str) -> int:
 
 # ── TTL / warm-up ─────────────────────────────────────────────────────────────
 
+
 def mark_feed_warm(user_id: str) -> None:
     """Mark that this user's feed has been warmed up from DB."""
     get_redis_client().setex(_warm_key(user_id), FEED_TTL_SECONDS, "1")
@@ -127,6 +132,7 @@ def explore_get_page(cursor: int = 0, page_size: int = 20) -> list[str]:
 
 
 # ── Internal ──────────────────────────────────────────────────────────────────
+
 
 def _trim_feed(client, key: str) -> None:
     """Keep only the top FEED_MAX_SIZE items. Removes lowest-scored items."""

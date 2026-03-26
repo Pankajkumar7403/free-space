@@ -5,7 +5,9 @@ test_hashing.py
 ~~~~~~~~~~~~~~~
 Tests for core/security/hashing.py
 """
+
 import pytest
+
 from core.security.hashing import (
     generate_otp,
     generate_token,
@@ -23,7 +25,7 @@ class TestGenerateToken:
 
     def test_length_is_reasonable(self):
         token = generate_token(32)
-        assert len(token) >= 40   # base64url of 32 bytes
+        assert len(token) >= 40  # base64url of 32 bytes
 
     def test_tokens_are_unique(self):
         assert generate_token() != generate_token()

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from django.db.models import QuerySet
 
@@ -15,10 +14,8 @@ from apps.notifications.models import DeviceToken, Notification, NotificationPre
 
 def get_notification_by_id(notification_id: uuid.UUID) -> Notification:
     try:
-        return (
-            Notification.objects
-            .select_related("actor", "recipient")
-            .get(id=notification_id)
+        return Notification.objects.select_related("actor", "recipient").get(
+            id=notification_id
         )
     except Notification.DoesNotExist:
         raise NotificationNotFoundError(notification_id)
@@ -30,8 +27,7 @@ def get_notifications_for_user(
     include_read: bool = True,
 ) -> QuerySet[Notification]:
     qs = (
-        Notification.objects
-        .filter(recipient_id=user_id)
+        Notification.objects.filter(recipient_id=user_id)
         .select_related("actor")
         .order_by("-created_at")
     )
@@ -54,9 +50,7 @@ def get_unread_notification_count(user_id: uuid.UUID) -> int:
     if cached is not None:
         return int(cached)
 
-    count = Notification.objects.filter(
-        recipient_id=user_id, is_read=False
-    ).count()
+    count = Notification.objects.filter(recipient_id=user_id, is_read=False).count()
 
     redis.setex(cache_key, UNREAD_COUNT_TTL_SECONDS, count)
     return count

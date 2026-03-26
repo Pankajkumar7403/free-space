@@ -8,11 +8,10 @@ Tests for core/exceptions/handler.py and core/exceptions/base.py
 Verifies that every exception type is converted to our
 standard { "error": { "code", "message", "detail" } } envelope.
 """
+
 from __future__ import annotations
 
 import pytest
-from django.test import RequestFactory
-from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from core.exceptions.base import (
@@ -117,12 +116,15 @@ class TestDRFExceptions:
 class TestErrorEnvelopeShape:
     """Assert the envelope always has the exact same shape."""
 
-    @pytest.mark.parametrize("exc,expected_status", [
-        (NotFoundError(), 404),
-        (ConflictError(), 409),
-        (ValidationError(), 400),
-        (RateLimitError(), 429),
-    ])
+    @pytest.mark.parametrize(
+        "exc,expected_status",
+        [
+            (NotFoundError(), 404),
+            (ConflictError(), 409),
+            (ValidationError(), 400),
+            (RateLimitError(), 429),
+        ],
+    )
     def test_envelope_always_has_required_keys(self, exc, expected_status):
         response = custom_exception_handler(exc, make_context())
         error = response.data["error"]

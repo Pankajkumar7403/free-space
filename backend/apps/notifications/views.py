@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,9 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.notifications.selectors import (
+    get_notification_preferences,
     get_notifications_for_user,
     get_unread_notification_count,
-    get_notification_preferences,
 )
 from apps.notifications.serializers import (
     DeviceTokenDeregisterSerializer,
@@ -38,6 +38,7 @@ class NotificationListView(APIView):
     GET /api/v1/notifications/
     GET /api/v1/notifications/?unread_only=true
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -55,6 +56,7 @@ class NotificationListView(APIView):
 
 class NotificationUnreadCountView(APIView):
     """GET /api/v1/notifications/unread-count/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -64,6 +66,7 @@ class NotificationUnreadCountView(APIView):
 
 class NotificationMarkAllReadView(APIView):
     """POST /api/v1/notifications/mark-all-read/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -76,6 +79,7 @@ class NotificationDetailView(APIView):
     PATCH  /api/v1/notifications/<notification_id>/   — mark as read
     DELETE /api/v1/notifications/<notification_id>/   — delete
     """
+
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, notification_id: uuid.UUID):
@@ -98,6 +102,7 @@ class NotificationPreferenceView(APIView):
     GET   /api/v1/notifications/preferences/
     PATCH /api/v1/notifications/preferences/
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -119,6 +124,7 @@ class DeviceTokenView(APIView):
     POST   /api/v1/notifications/device-tokens/   — register FCM token
     DELETE /api/v1/notifications/device-tokens/   — deregister FCM token
     """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

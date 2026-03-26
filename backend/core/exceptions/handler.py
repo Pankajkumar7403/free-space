@@ -11,6 +11,7 @@ Produces a consistent JSON envelope for every error response:
         }
     }
 """
+
 from __future__ import annotations
 
 import logging
@@ -29,7 +30,9 @@ from core.exceptions.base import AppException
 logger = logging.getLogger(__name__)
 
 
-def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
+def custom_exception_handler(
+    exc: Exception, context: dict[str, Any]
+) -> Response | None:
     """
     Entry-point configured in REST_FRAMEWORK["EXCEPTION_HANDLER"].
 
@@ -40,13 +43,18 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     # ── 1. Translate Django / stdlib exceptions into DRF equivalents ──────────
     if isinstance(exc, Http404):
         from rest_framework.exceptions import NotFound
+
         exc = NotFound()
     elif isinstance(exc, PermissionDenied):
         from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+
         exc = DRFPermissionDenied()
     elif isinstance(exc, DjangoValidationError):
         from rest_framework.exceptions import ValidationError
-        exc = ValidationError(detail=exc.message_dict if hasattr(exc, "message_dict") else exc.messages)
+
+        exc = ValidationError(
+            detail=exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+        )
 
     # ── 2. Handle our own domain exceptions ───────────────────────────────────
     if isinstance(exc, AppException):
@@ -78,12 +86,19 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         exc_info=exc,
     )
     return Response(
-        {"error": {"code": "INTERNAL_SERVER_ERROR", "message": "An unexpected error occurred.", "detail": None}},
+        {
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occurred.",
+                "detail": None,
+            }
+        },
         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _get_error_code(exc: APIException) -> str:
     """Map DRF exception class to a stable error code string."""

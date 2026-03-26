@@ -24,6 +24,7 @@ Health check
     from core.redis.client import check_redis_connection
     check_redis_connection()   # raises RedisConnectionError on failure
 """
+
 from __future__ import annotations
 
 import logging
@@ -112,23 +113,26 @@ def get_redis_client():
         return _redis_client
 
     # ── Test environment: use fakeredis ───────────────────────────────────────
-    cache_backend = (
-        settings.CACHES.get("default", {}).get("BACKEND", "")
-    )
+    cache_backend = settings.CACHES.get("default", {}).get("BACKEND", "")
     if "locmem" in cache_backend or getattr(settings, "USE_FAKEREDIS", False):
         try:
             import fakeredis
+
             _redis_client = fakeredis.FakeRedis(decode_responses=True, version=7)
             logger.info("Redis: using fakeredis (test environment)")
             return _redis_client
         except Exception as exc:
-            logger.warning("fakeredis unavailable; using in-memory fallback", extra={"error": str(exc)})
+            logger.warning(
+                "fakeredis unavailable; using in-memory fallback",
+                extra={"error": str(exc)},
+            )
             _redis_client = _InMemoryRedis()
             return _redis_client
 
     # ── Production/development: use django-redis ──────────────────────────────
     try:
         from django_redis import get_redis_connection
+
         _redis_client = get_redis_connection("default")
         logger.info("Redis: connected via django-redis")
     except Exception:
@@ -152,7 +156,9 @@ def check_redis_connection() -> bool:
     client = get_redis_client()
     result = client.ping()
     if not result:
-        raise RuntimeError("Redis PING returned False — check REDIS_URL / CACHES settings.")
+        raise RuntimeError(
+            "Redis PING returned False — check REDIS_URL / CACHES settings."
+        )
     logger.info("Redis health check: OK")
     return True
 

@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import logging
 
+from apps.feed.cache import feed_delete, feed_remove_post
 from apps.feed.constants import (
     CELEBRITY_FOLLOWER_THRESHOLD,
     FANOUT_BATCH_SIZE,
-    FeedSource,
 )
-from apps.feed.ranking import compute_score, recency_score
-from apps.feed.cache import feed_remove_post, feed_delete
+from apps.feed.ranking import compute_score
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +55,14 @@ def fanout_post_to_followers(
     if follower_count > CELEBRITY_FOLLOWER_THRESHOLD:
         logger.info(
             "fanout: celebrity mode for author=%s followers=%d — skipping write fanout",
-            author_id, follower_count,
+            author_id,
+            follower_count,
         )
         return
 
     # ── Regular fan-out-on-write ──────────────────────────────────────────────
     from apps.users.models import Follow
+
     follower_ids = list(
         Follow.objects.filter(
             following_id=author_id,
@@ -71,13 +72,15 @@ def fanout_post_to_followers(
 
     logger.info(
         "fanout: writing to %d follower feeds for post=%s",
-        len(follower_ids), post_id,
+        len(follower_ids),
+        post_id,
     )
 
     score = compute_score(post_created_at=post_created_at)
 
     # Push in batches via Celery to avoid blocking the consumer
     from apps.feed.tasks import push_to_feeds_task  # deferred to break circular import
+
     for i in range(0, len(follower_ids), FANOUT_BATCH_SIZE):
         batch = [str(uid) for uid in follower_ids[i : i + FANOUT_BATCH_SIZE]]
         push_to_feeds_task.delay(

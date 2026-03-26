@@ -2,6 +2,7 @@
 OpenAPI authentication extension for drf-spectacular.
 Tells spectacular how QommunityJWTAuthentication maps to OpenAPI securitySchemes.
 """
+
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 
 
@@ -16,4 +17,3 @@ class QommunityJWTAuthenticationScheme(OpenApiAuthenticationExtension):
             "bearerFormat": "JWT",
             "description": "JWT access token. Obtain from /api/v1/users/auth/login/",
         }
-

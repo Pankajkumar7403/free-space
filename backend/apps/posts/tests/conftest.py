@@ -1,8 +1,8 @@
 # 📁 Location: backend/apps/posts/tests/conftest.py
 
 import pytest
+
 from apps.posts.tests.factories import HashtagFactory, MediaFactory, PostFactory
-from apps.users.tests.factories import UserFactory
 
 
 @pytest.fixture

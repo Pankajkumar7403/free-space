@@ -1,8 +1,6 @@
 """Shared auth mixin — all user types inherit this for login."""
-from __future__ import annotations
 
-import random
-import string
+from __future__ import annotations
 
 from locust import HttpUser
 

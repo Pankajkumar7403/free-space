@@ -31,10 +31,9 @@ Usage in a view
             serializer = PostSerializer(page, many=True)
             return paginator.get_paginated_response(serializer.data)
 """
+
 from __future__ import annotations
 
-import base64
-import json
 import logging
 
 from rest_framework.pagination import CursorPagination as DRFCursorPagination
@@ -99,5 +98,5 @@ class FeedCursorPagination(CursorPagination):
     a composite cursor of (score DESC, id ASC) for stable ordering.
     """
 
-    ordering = ("-score", "id")
+    ordering = "-score"
     page_size = 20

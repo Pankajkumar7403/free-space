@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from typing import Any
 
 from celery import shared_task
 
@@ -15,13 +16,20 @@ def classify_media_image(self, media_id: str) -> None:
     Called after media reaches READY status.
     Quarantines media if BLOCK confidence exceeded.
     """
-    from apps.media.models import Media
-    from apps.media.constants import MediaStatus
-    from apps.common.moderation.image_classifier import classify_image, ModerationAction
+    from django.apps import apps as django_apps
+
+    from apps.common.moderation.image_classifier import ModerationAction, classify_image
+    from apps.posts.constants import MediaStatus
+
+    try:
+        Media: Any = django_apps.get_model("media", "Media")
+    except LookupError:
+        # Media app/model not installed in this deployment.
+        return
 
     try:
         media = Media.objects.get(id=uuid.UUID(media_id))
-    except Media.DoesNotExist:
+    except Exception:
         return
 
     if not media.processed_key:

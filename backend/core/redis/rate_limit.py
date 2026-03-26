@@ -22,13 +22,13 @@ Or use the decorator:
     def login_view(request):
         ...
 """
+
 from __future__ import annotations
 
 import logging
-import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Callable
 
 from core.redis.client import get_redis_client
 
@@ -85,7 +85,9 @@ class RateLimiter:
     def check(self) -> RateLimitResult:
         """Check the rate limit without raising. Returns a RateLimitResult."""
         try:
-            current, ttl = self._script(keys=[self.redis_key], args=[self.limit, self.window])
+            current, ttl = self._script(
+                keys=[self.redis_key], args=[self.limit, self.window]
+            )
             current, ttl = int(current), int(ttl)
             return RateLimitResult(
                 allowed=current <= self.limit,
@@ -93,16 +95,39 @@ class RateLimiter:
                 limit=self.limit,
                 retry_after=max(ttl, 0),
             )
-        except Exception:
-            logger.exception("Rate limiter Redis error for key=%s — allowing request", self.redis_key)
+        except Exception as exc:
+            # fakeredis (used in tests) doesn't implement scripting/EVALSHA in some versions.
+            # Fall back to non-scripted ops when the backend rejects EVALSHA.
+            if "evalsha" in str(exc).lower():
+                try:
+                    client = get_redis_client()
+                    current = int(client.incr(self.redis_key))
+                    if current == 1:
+                        client.expire(self.redis_key, self.window)
+                    ttl = int(client.ttl(self.redis_key))
+                    return RateLimitResult(
+                        allowed=current <= self.limit,
+                        current=current,
+                        limit=self.limit,
+                        retry_after=max(ttl, 0),
+                    )
+                except Exception:
+                    pass
+            logger.exception(
+                "Rate limiter Redis error for key=%s — allowing request", self.redis_key
+            )
             # Fail open: if Redis is down we should not block users
-            return RateLimitResult(allowed=True, current=0, limit=self.limit, retry_after=0)
+            return RateLimitResult(
+                allowed=True, current=0, limit=self.limit, retry_after=0
+            )
 
     def allow(self) -> bool:
         return self.check().allowed
 
 
-def rate_limit(key: str, limit: int, window: int, identifier_fn: Callable | None = None):
+def rate_limit(
+    key: str, limit: int, window: int, identifier_fn: Callable | None = None
+):
     """
     Decorator factory for rate-limiting view functions.
 
@@ -119,6 +144,7 @@ def rate_limit(key: str, limit: int, window: int, identifier_fn: Callable | None
         def login_view(request):
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(request, *args, **kwargs):
@@ -129,7 +155,9 @@ def rate_limit(key: str, limit: int, window: int, identifier_fn: Callable | None
                 if identifier_fn
                 else request.META.get("REMOTE_ADDR", "unknown")
             )
-            limiter = RateLimiter(key=key, identifier=identifier, limit=limit, window=window)
+            limiter = RateLimiter(
+                key=key, identifier=identifier, limit=limit, window=window
+            )
             result = limiter.check()
 
             if not result.allowed:
@@ -137,5 +165,7 @@ def rate_limit(key: str, limit: int, window: int, identifier_fn: Callable | None
                     detail={"retry_after": result.retry_after, "limit": limit}
                 )
             return func(request, *args, **kwargs)
+
         return wrapper
+
     return decorator

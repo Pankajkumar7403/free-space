@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import math
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from apps.feed.constants import (
     WEIGHT_ENGAGEMENT,
@@ -48,7 +47,7 @@ def compute_score(
     float in [0.0, 1.0]
     """
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
     # ── Recency ───────────────────────────────────────────────────────────────
     # Half-life of 24 hours: score * 0.5 every 24h
@@ -66,7 +65,7 @@ def compute_score(
     relationship = 1.0 if is_mutual_follow else 0.0
 
     score = (
-        WEIGHT_RECENCY      * recency
+        WEIGHT_RECENCY * recency
         + WEIGHT_ENGAGEMENT * engagement
         + WEIGHT_RELATIONSHIP * relationship
     )

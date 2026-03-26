@@ -13,6 +13,7 @@ Logs every request with:
 These fields make logs filterable/searchable in any log aggregator
 (Datadog, CloudWatch, Loki, etc.).
 """
+
 from __future__ import annotations
 
 import logging

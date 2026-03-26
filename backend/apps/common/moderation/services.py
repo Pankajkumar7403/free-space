@@ -3,14 +3,17 @@ apps/common/moderation/services.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 High-level moderation service called by post/comment creation services.
 """
+
 from __future__ import annotations
 
 import logging
 import uuid
-from typing import Optional
 
 from apps.common.moderation.constants import ModerationAction
-from apps.common.moderation.text_filter import TextModerationFilter, TextModerationResult
+from apps.common.moderation.text_filter import (
+    TextModerationFilter,
+    TextModerationResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +45,7 @@ def moderate_text(content: str, content_type: str = "post") -> TextModerationRes
             },
         )
         from django.core.exceptions import ValidationError
+
         raise ValidationError(
             "Your content violates our community guidelines and cannot be posted. "
             "Qommunity is a safe space - hate speech is not welcome here. 🏳️‍🌈"
@@ -71,10 +75,12 @@ def moderate_image_async(media_id: uuid.UUID) -> None:
     Called after media upload completes (status = READY).
     """
     from apps.common.moderation.tasks import classify_media_image
+
     classify_media_image.delay(str(media_id))
 
 
 def get_crisis_resources(locale: str = "DEFAULT") -> dict:
     """Return crisis resources for the given locale."""
     from apps.common.safety.constants import CRISIS_RESOURCES
+
     return CRISIS_RESOURCES.get(locale) or CRISIS_RESOURCES.get("DEFAULT", {})

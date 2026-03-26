@@ -7,10 +7,10 @@ Every secret MUST come from environment variables - never from code.
 Run security check with:
     python manage.py check --deploy --settings=config.settings.production
 """
-import logging
+
 import os
 
-from .base import *   # noqa: F403
+from .base import *  # noqa: F403
 
 # -- Core ---------------------------------------------------------------------
 DEBUG = False
@@ -18,7 +18,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is not set in environment variables.")
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
+]
 APP_VERSION = os.getenv("APP_VERSION", "unknown")
 DJANGO_ENV = os.getenv("DJANGO_ENV", "production")
 
@@ -26,7 +28,7 @@ DJANGO_ENV = os.getenv("DJANGO_ENV", "production")
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31_536_000   # 1 year
+SECURE_HSTS_SECONDS = 31_536_000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -68,8 +70,8 @@ CACHES = {
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/2")
 CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/2")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1   # Fair dispatch for long tasks
-CELERY_TASK_ACKS_LATE = True   # Acknowledge only after completion
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fair dispatch for long tasks
+CELERY_TASK_ACKS_LATE = True  # Acknowledge only after completion
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 
 # -- CORS ---------------------------------------------------------------------
@@ -91,7 +93,8 @@ SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.10")
 SENTRY_PROFILES_SAMPLE_RATE = float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "0.05"))
 
 # Bootstrap Sentry immediately
-from core.monitoring.sentry import init_sentry   # noqa: E402
+from core.monitoring.sentry import init_sentry  # noqa: E402
+
 init_sentry(locals())
 
 # -- Logging - structured JSON -------------------------------------------------

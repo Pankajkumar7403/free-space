@@ -11,6 +11,7 @@ Registration in settings.py MIDDLEWARE:
     "core.middleware.metrics.PrometheusMetricsMiddleware",
     # must be FIRST middleware to capture total latency
 """
+
 from __future__ import annotations
 
 import logging
@@ -35,10 +36,11 @@ class PrometheusMetricsMiddleware:
                 HTTP_REQUEST_IN_PROGRESS,
                 HTTP_REQUEST_TOTAL,
             )
-            self._duration  = HTTP_REQUEST_DURATION
-            self._in_prog   = HTTP_REQUEST_IN_PROGRESS
-            self._total     = HTTP_REQUEST_TOTAL
-            self._enabled   = True
+
+            self._duration = HTTP_REQUEST_DURATION
+            self._in_prog = HTTP_REQUEST_IN_PROGRESS
+            self._total = HTTP_REQUEST_TOTAL
+            self._enabled = True
         except Exception:
             self._enabled = False
 
@@ -47,14 +49,14 @@ class PrometheusMetricsMiddleware:
             return self.get_response(request)
 
         endpoint = self._get_endpoint(request)
-        method   = request.method
+        method = request.method
 
         self._in_prog.labels(method=method, endpoint=endpoint).inc()
         start = time.perf_counter()
 
         try:
             response = self.get_response(request)
-            status   = str(response.status_code)
+            status = str(response.status_code)
         except Exception:
             status = "500"
             raise
@@ -78,6 +80,7 @@ class PrometheusMetricsMiddleware:
         """
         try:
             from django.urls import resolve
+
             match = resolve(request.path_info)
             # Build pattern string from namespace + route
             ns = f"{match.namespace}:" if match.namespace else ""
@@ -91,5 +94,5 @@ class PrometheusMetricsMiddleware:
 
 def _looks_like_id(segment: str) -> bool:
     if len(segment) == 36 and segment.count("-") == 4:
-        return True   # UUID
+        return True  # UUID
     return segment.isdigit()

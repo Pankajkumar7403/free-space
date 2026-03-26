@@ -1,12 +1,14 @@
 # 📁 Location: backend/apps/likes/tests/test_views.py
 # ▶  Run:      pytest apps/likes/tests/test_views.py -v
 
-import pytest
 from unittest.mock import patch
-from core.redis.client import get_redis_client, reset_client
-from apps.posts.tests.factories import PostFactory
+
+import pytest
+
 from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
 from apps.users.tests.factories import UserFactory
+from core.redis.client import get_redis_client, reset_client
 from core.testing.base import BaseAPITestCase
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db]
@@ -24,9 +26,9 @@ def clean_redis():
 class TestPostLikeView(BaseAPITestCase):
     def setUp(self):
         super().setUp()
-        self.user  = UserFactory()
+        self.user = UserFactory()
         self.other = UserFactory()
-        self.post  = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
+        self.post = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
         self.authenticate(self.user)
         self.url = f"/api/v1/posts/{self.post.pk}/like/"
 

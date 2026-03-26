@@ -4,6 +4,7 @@ Reusable test mixins.
 Mix these into any TestCase subclass to get focused, opt-in behaviours
 without polluting the base classes.
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -37,6 +38,7 @@ class CeleryEagerMixin:
     def setUp(self) -> None:
         super().setUp()  # type: ignore[misc]
         from django.test.utils import override_settings
+
         self._celery_override = override_settings(
             CELERY_TASK_ALWAYS_EAGER=True,
             CELERY_TASK_EAGER_PROPAGATES=True,

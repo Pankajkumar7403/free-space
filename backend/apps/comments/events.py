@@ -13,12 +13,12 @@ from core.kafka.topics import Topics
 class CommentCreatedEvent(BaseEvent):
     event_type: str = Topics.COMMENT_CREATED
     comment_id: str = ""
-    post_id:    str = ""
-    author_id:  str = ""
-    post_author_id: str = ""   # for notification routing
+    post_id: str = ""
+    author_id: str = ""
+    post_author_id: str = ""  # for notification routing
 
     def to_key(self) -> str:
-        return self.post_id   # partition by post
+        return self.post_id  # partition by post
 
 
 def emit_comment_created(*, comment) -> None:

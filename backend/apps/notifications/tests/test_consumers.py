@@ -7,6 +7,7 @@ pytest-asyncio runs them. Django DB access uses @pytest.mark.django_db(transacti
 The CHANNEL_LAYERS setting is patched to InMemoryChannelLayer in testing.py,
 so no Redis is required.
 """
+
 import pytest
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
@@ -59,9 +60,7 @@ class TestNotificationConsumerConnect:
         await sync_to_async(notification_factory)(recipient=user, is_read=False)
 
         token = await sync_to_async(jwt_token_factory)(user)
-        comm = WebsocketCommunicator(
-            application, f"/ws/notifications/?token={token}"
-        )
+        comm = WebsocketCommunicator(application, f"/ws/notifications/?token={token}")
         await comm.connect()
         msg = await comm.receive_json_from(timeout=5)
 
@@ -80,9 +79,7 @@ class TestNotificationConsumerReceive:
         user = await sync_to_async(user_factory)()
         token = await sync_to_async(jwt_token_factory)(user)
 
-        comm = WebsocketCommunicator(
-            application, f"/ws/notifications/?token={token}"
-        )
+        comm = WebsocketCommunicator(application, f"/ws/notifications/?token={token}")
         await comm.connect()
         await comm.receive_json_from(timeout=5)  # consume "connected" handshake
 
@@ -113,9 +110,7 @@ class TestNotificationConsumerReceive:
         user = await sync_to_async(user_factory)()
         token = await sync_to_async(jwt_token_factory)(user)
 
-        comm = WebsocketCommunicator(
-            application, f"/ws/notifications/?token={token}"
-        )
+        comm = WebsocketCommunicator(application, f"/ws/notifications/?token={token}")
         await comm.connect()
         await comm.receive_json_from(timeout=5)  # connected
 
@@ -129,14 +124,10 @@ class TestNotificationConsumerReceive:
         self, user_factory, jwt_token_factory, notification_factory
     ):
         user = await sync_to_async(user_factory)()
-        notif = await sync_to_async(notification_factory)(
-            recipient=user, is_read=False
-        )
+        notif = await sync_to_async(notification_factory)(recipient=user, is_read=False)
         token = await sync_to_async(jwt_token_factory)(user)
 
-        comm = WebsocketCommunicator(
-            application, f"/ws/notifications/?token={token}"
-        )
+        comm = WebsocketCommunicator(application, f"/ws/notifications/?token={token}")
         await comm.connect()
         await comm.receive_json_from(timeout=5)  # connected
 
@@ -165,9 +156,7 @@ class TestNotificationConsumerReceive:
         await sync_to_async(notification_factory)(recipient=user, is_read=False)
         token = await sync_to_async(jwt_token_factory)(user)
 
-        comm = WebsocketCommunicator(
-            application, f"/ws/notifications/?token={token}"
-        )
+        comm = WebsocketCommunicator(application, f"/ws/notifications/?token={token}")
         await comm.connect()
         await comm.receive_json_from(timeout=5)  # connected
 

@@ -5,6 +5,7 @@ GDPR service layer:
   - request_data_export()    -> initiate async export
   - delete_account()         -> cascade-delete all user data
 """
+
 from __future__ import annotations
 
 import logging
@@ -29,7 +30,9 @@ def request_data_export(user_id: uuid.UUID) -> str:
     generate_gdpr_export.delay(str(user_id), job_id)
 
     GDPR_EXPORTS.labels(status="requested").inc()
-    logger.info("gdpr.export.requested", extra={"user_id": str(user_id), "job_id": job_id})
+    logger.info(
+        "gdpr.export.requested", extra={"user_id": str(user_id), "job_id": job_id}
+    )
     return job_id
 
 
@@ -59,13 +62,20 @@ def delete_account(user_id: uuid.UUID) -> None:
 
     with transaction.atomic():
         _cascade_delete(user_id)
-        logger.info("gdpr.delete.complete", extra={"user_id": str(user_id), "username": user.username})
+        logger.info(
+            "gdpr.delete.complete",
+            extra={"user_id": str(user_id), "username": user.username},
+        )
 
 
 def _cascade_delete(user_id: uuid.UUID) -> None:
     """Execute deletion in safe dependency order."""
-    from apps.notifications.models import Notification, DeviceToken, NotificationPreference
     from apps.feed.models import FeedItem
+    from apps.notifications.models import (
+        DeviceToken,
+        Notification,
+        NotificationPreference,
+    )
 
     # Notifications
     Notification.objects.filter(recipient_id=user_id).delete()
@@ -84,6 +94,7 @@ def _cascade_delete(user_id: uuid.UUID) -> None:
 
     # User row (CASCADE handles remaining FK refs)
     from apps.users.models import User
+
     User.objects.filter(id=user_id).delete()
 
 
@@ -107,11 +118,13 @@ def _delete_posts(user_id: uuid.UUID) -> None:
 
 def _delete_social_graph(user_id: uuid.UUID) -> None:
     from apps.users.models import Follow
+
     Follow.objects.filter(follower_id=user_id).delete()
     Follow.objects.filter(following_id=user_id).delete()
 
     try:
         from apps.users.models import BlockedUser, MutedUser
+
         BlockedUser.objects.filter(blocker_id=user_id).delete()
         BlockedUser.objects.filter(blocked_id=user_id).delete()
         MutedUser.objects.filter(muter_id=user_id).delete()

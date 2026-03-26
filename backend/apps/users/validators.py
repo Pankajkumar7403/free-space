@@ -6,14 +6,24 @@ import re
 
 from core.exceptions.base import ValidationError
 
-
 # ── Username ──────────────────────────────────────────────────────────────────
 
 _USERNAME_RE = re.compile(r"^[a-zA-Z0-9_\.]{3,30}$")
-_RESERVED_USERNAMES = frozenset({
-    "admin", "support", "help", "qommunity", "staff",
-    "mod", "moderator", "root", "api", "system", "bot",
-})
+_RESERVED_USERNAMES = frozenset(
+    {
+        "admin",
+        "support",
+        "help",
+        "qommunity",
+        "staff",
+        "mod",
+        "moderator",
+        "root",
+        "api",
+        "system",
+        "bot",
+    }
+)
 
 
 def validate_username(username: str) -> None:
@@ -42,6 +52,7 @@ def validate_username(username: str) -> None:
 
 # ── Password ──────────────────────────────────────────────────────────────────
 
+
 def validate_password_strength(password: str) -> None:
     """
     Password must be at least 8 characters.
@@ -63,6 +74,7 @@ def validate_password_strength(password: str) -> None:
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 
+
 def validate_email_format(email: str) -> None:
     """Basic email format check (DRF/Django also validates this, belt-and-suspenders)."""
     if not email or "@" not in email:
@@ -70,6 +82,7 @@ def validate_email_format(email: str) -> None:
 
 
 # ── Bio ───────────────────────────────────────────────────────────────────────
+
 
 def validate_bio(bio: str) -> None:
     if len(bio) > 500:

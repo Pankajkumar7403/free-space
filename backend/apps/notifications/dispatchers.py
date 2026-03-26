@@ -12,6 +12,7 @@ Delivery channels
 
 Each channel is gated by the user's NotificationPreference row.
 """
+
 from __future__ import annotations
 
 import logging
@@ -26,12 +27,24 @@ logger = logging.getLogger(__name__)
 
 # ── Preference field names per notification type ──────────────────────────────
 _PREF_MAP: dict[str, tuple[str, str, str]] = {
-    NotificationType.LIKE_POST:    ("likes_in_app",    "likes_push",    "likes_email"),
-    NotificationType.LIKE_COMMENT: ("likes_in_app",    "likes_push",    "likes_email"),
-    NotificationType.COMMENT:      ("comments_in_app", "comments_push", "comments_email"),
-    NotificationType.COMMENT_REPLY:("comments_in_app", "comments_push", "comments_email"),
-    NotificationType.FOLLOW:       ("follows_in_app",  "follows_push",  "follows_email"),
-    NotificationType.MENTION:      ("mentions_in_app", "mentions_push", "mentions_email"),
+    str(NotificationType.LIKE_POST): ("likes_in_app", "likes_push", "likes_email"),
+    str(NotificationType.LIKE_COMMENT): ("likes_in_app", "likes_push", "likes_email"),
+    str(NotificationType.COMMENT): (
+        "comments_in_app",
+        "comments_push",
+        "comments_email",
+    ),
+    str(NotificationType.COMMENT_REPLY): (
+        "comments_in_app",
+        "comments_push",
+        "comments_email",
+    ),
+    str(NotificationType.FOLLOW): ("follows_in_app", "follows_push", "follows_email"),
+    str(NotificationType.MENTION): (
+        "mentions_in_app",
+        "mentions_push",
+        "mentions_email",
+    ),
 }
 
 _DEFAULT_PREF = ("likes_in_app", "likes_push", "likes_email")
@@ -63,6 +76,7 @@ def dispatch_notification(notification: Notification) -> None:
 
 # ── Private dispatch helpers ──────────────────────────────────────────────────
 
+
 def _dispatch_websocket(notification: Notification) -> None:
     """
     Send the notification to the user's open WebSocket connections via the
@@ -78,7 +92,7 @@ def _dispatch_websocket(notification: Notification) -> None:
         async_to_sync(channel_layer.group_send)(
             get_notification_group(notification.recipient_id),
             {
-                "type": "notification_message",     # maps to consumer method
+                "type": "notification_message",  # maps to consumer method
                 "data": _build_ws_payload(notification),
             },
         )
@@ -95,29 +109,27 @@ def _dispatch_websocket(notification: Notification) -> None:
 
 def _dispatch_fcm_push(notification: Notification) -> None:
     from apps.notifications.tasks import send_fcm_push_notification
+
     send_fcm_push_notification.delay(str(notification.id))
 
 
 def _dispatch_email(notification: Notification) -> None:
     from apps.notifications.tasks import send_email_notification
+
     send_email_notification.delay(str(notification.id))
 
 
 def _build_ws_payload(notification: Notification) -> dict:
     """Build the JSON payload sent over the WebSocket to the client."""
     return {
-        "type":              "notification",
-        "id":                str(notification.id),
+        "type": "notification",
+        "id": str(notification.id),
         "notification_type": notification.notification_type,
-        "actor_id":          str(notification.actor_id) if notification.actor_id else None,
-        "actor_username": (
-            notification.actor.username
-            if notification.actor
-            else None
-        ),
-        "message":    notification.message,
-        "is_read":    notification.is_read,
-        "target_id":  str(notification.object_id) if notification.object_id else None,
+        "actor_id": str(notification.actor_id) if notification.actor_id else None,
+        "actor_username": (notification.actor.username if notification.actor else None),
+        "message": notification.message,
+        "is_read": notification.is_read,
+        "target_id": str(notification.object_id) if notification.object_id else None,
         "created_at": notification.created_at.isoformat(),
     }
 

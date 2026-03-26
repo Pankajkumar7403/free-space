@@ -1,4 +1,5 @@
 import uuid
+
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
@@ -18,7 +19,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Notification",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -91,7 +97,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="NotificationPreference",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -123,7 +134,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="DeviceToken",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -132,7 +148,11 @@ class Migration(migrations.Migration):
                 (
                     "platform",
                     models.CharField(
-                        choices=[("ios", "iOS"), ("android", "Android"), ("web", "Web (PWA)")],
+                        choices=[
+                            ("ios", "iOS"),
+                            ("android", "Android"),
+                            ("web", "Web (PWA)"),
+                        ],
                         default="ios",
                         max_length=10,
                     ),

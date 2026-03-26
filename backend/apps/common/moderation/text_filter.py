@@ -12,19 +12,17 @@ The blocklist is intentionally NOT stored in code.  Load it from:
   - Environment variable: MODERATION_BLOCKLIST_PATH (path to newline-delimited file)
   - Or Django setting: MODERATION_BLOCKLIST (list of strings)
 """
+
 from __future__ import annotations
 
 import logging
 import re
 import unicodedata
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from django.conf import settings
 
 from apps.common.moderation.constants import (
-    BLOCK_SCORE_THRESHOLD,
-    WARN_SCORE_THRESHOLD,
     ModerationAction,
     ModerationSeverity,
 )
@@ -34,11 +32,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TextModerationResult:
-    action:       ModerationAction
-    severity:     ModerationSeverity
-    score:        float              # 0.0 = clean, 1.0 = definitely harmful
-    matched_rule: Optional[str] = None
-    explanation:  str = ""
+    action: ModerationAction
+    severity: ModerationSeverity
+    score: float  # 0.0 = clean, 1.0 = definitely harmful
+    matched_rule: str | None = None
+    explanation: str = ""
 
 
 class TextModerationFilter:
@@ -46,7 +44,8 @@ class TextModerationFilter:
     Singleton text moderation filter.
     Loads blocklist once on first use; thread-safe for reads.
     """
-    _instance: Optional[TextModerationFilter] = None
+
+    _instance: TextModerationFilter | None = None
     _blocklist: frozenset[str] = frozenset()
 
     @classmethod
@@ -88,6 +87,7 @@ class TextModerationFilter:
     def check_crisis_keywords(self, text: str) -> bool:
         """Return True if text contains crisis keywords that should trigger resource display."""
         from apps.common.moderation.constants import CRISIS_KEYWORDS_DEFAULT
+
         custom = frozenset(getattr(settings, "CRISIS_KEYWORDS", []))
         all_keywords = CRISIS_KEYWORDS_DEFAULT | custom
         normalised = self._normalise(text)
@@ -131,6 +131,7 @@ class TextModerationFilter:
 
     def _check_crisis_keywords(self, normalised: str) -> TextModerationResult:
         from apps.common.moderation.constants import CRISIS_KEYWORDS_DEFAULT
+
         custom = frozenset(getattr(settings, "CRISIS_KEYWORDS", []))
         all_kw = CRISIS_KEYWORDS_DEFAULT | custom
         for kw in all_kw:

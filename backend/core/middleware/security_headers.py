@@ -21,7 +21,7 @@ Registration in settings.py MIDDLEWARE (after auth):
 class SecurityHeadersMiddleware:
     _CSP = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' cdn.qommunity.app; "   # tighten in M8
+        "script-src 'self' 'unsafe-inline' cdn.qommunity.app; "  # tighten in M8
         "style-src  'self' 'unsafe-inline'; "
         "img-src    'self' data: cdn.qommunity.app *.amazonaws.com; "
         "media-src  'self' cdn.qommunity.app *.amazonaws.com; "
@@ -33,11 +33,7 @@ class SecurityHeadersMiddleware:
     )
 
     _PERMISSIONS = (
-        "camera=(), "
-        "microphone=(), "
-        "geolocation=(self), "
-        "payment=(), "
-        "usb=()"
+        "camera=(), " "microphone=(), " "geolocation=(self), " "payment=(), " "usb=()"
     )
 
     def __init__(self, get_response):
@@ -45,12 +41,12 @@ class SecurityHeadersMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
-        response["X-Content-Type-Options"]        = "nosniff"
-        response["X-Frame-Options"]               = "DENY"
-        response["Referrer-Policy"]               = "strict-origin-when-cross-origin"
-        response["Permissions-Policy"]            = self._PERMISSIONS
-        response["Cross-Origin-Opener-Policy"]    = "same-origin"
-        response["Cross-Origin-Embedder-Policy"]  = "require-corp"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["X-Frame-Options"] = "DENY"
+        response["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response["Permissions-Policy"] = self._PERMISSIONS
+        response["Cross-Origin-Opener-Policy"] = "same-origin"
+        response["Cross-Origin-Embedder-Policy"] = "require-corp"
 
         # CSP only on non-static responses
         content_type = response.get("Content-Type", "")

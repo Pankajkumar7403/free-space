@@ -6,6 +6,7 @@ Called once at Django startup via apps.py or settings import.
 All configuration is driven by environment variables so no secrets
 live in code.
 """
+
 from __future__ import annotations
 
 import logging
@@ -34,9 +35,9 @@ def init_sentry(settings) -> None:
             dsn=dsn,
             integrations=[
                 DjangoIntegration(
-                    transaction_style="url",    # group by URL pattern, not instance
+                    transaction_style="url",  # group by URL pattern, not instance
                     middleware_spans=True,
-                    signals_spans=False,        # reduce noise
+                    signals_spans=False,  # reduce noise
                 ),
                 CeleryIntegration(
                     monitor_beat_tasks=True,
@@ -44,8 +45,8 @@ def init_sentry(settings) -> None:
                 ),
                 RedisIntegration(),
                 LoggingIntegration(
-                    level=logging.WARNING,       # breadcrumb level
-                    event_level=logging.ERROR,   # send as Sentry event
+                    level=logging.WARNING,  # breadcrumb level
+                    event_level=logging.ERROR,  # send as Sentry event
                 ),
             ],
             # Performance monitoring
