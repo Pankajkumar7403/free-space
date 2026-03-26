@@ -9,27 +9,49 @@ from .base import *  # noqa: F401, F403
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # ── Database ─────────────────────────────────────────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_TEST_DB", "fs_test_db"),
-        "USER": os.getenv(
-            "POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")
-        ),
-        "PASSWORD": os.getenv(
-            "POSTGRES_TEST_PASSWORD",
-            os.getenv("POSTGRES_PASSWORD", "qommunity_password"),
-        ),
-        "HOST": os.getenv(
-            "POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")
-        ),
-        "PORT": os.getenv("POSTGRES_TEST_PORT", os.getenv("POSTGRES_PORT", "5432")),
-        # Wrap every test in a transaction and roll back → no teardown cost.
-        "TEST": {
-            "NAME": os.getenv("POSTGRES_TEST_NAME", "test_fs_test_db"),
-        },
+# If DATABASE_URL is set (e.g. in CI), parse it directly.
+# Otherwise fall back to individual POSTGRES_* env vars for local dev.
+_database_url = os.getenv("DATABASE_URL")
+if _database_url:
+    import urllib.parse
+
+    _parsed = urllib.parse.urlparse(_database_url)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _parsed.path.lstrip("/"),
+            "USER": _parsed.username,
+            "PASSWORD": _parsed.password,
+            "HOST": _parsed.hostname,
+            "PORT": str(_parsed.port or 5432),
+            "TEST": {
+                "NAME": os.getenv(
+                    "POSTGRES_TEST_NAME", "test_" + _parsed.path.lstrip("/")
+                )
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_TEST_DB", "fs_test_db"),
+            "USER": os.getenv(
+                "POSTGRES_TEST_USER", os.getenv("POSTGRES_USER", "qommunity_user")
+            ),
+            "PASSWORD": os.getenv(
+                "POSTGRES_TEST_PASSWORD",
+                os.getenv("POSTGRES_PASSWORD", "qommunity_password"),
+            ),
+            "HOST": os.getenv(
+                "POSTGRES_TEST_HOST", os.getenv("POSTGRES_HOST", "localhost")
+            ),
+            "PORT": os.getenv("POSTGRES_TEST_PORT", os.getenv("POSTGRES_PORT", "5432")),
+            "TEST": {
+                "NAME": os.getenv("POSTGRES_TEST_NAME", "test_fs_test_db"),
+            },
+        }
+    }
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
 # Use a local-memory cache so tests never touch Redis.
