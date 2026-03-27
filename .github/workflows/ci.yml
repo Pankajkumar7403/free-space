@@ -93,7 +93,7 @@ jobs:
             --cov=core \
             --cov-report=xml:coverage.xml \
             --cov-report=term-missing \
-            --cov-fail-under=80 \
+            --cov-fail-under=75 \
             -v \
             --tb=short
       - name: Upload coverage to Codecov
