@@ -36,25 +36,28 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # ── Core identity ─────────────────────────────────────────────────────────
-    email    = models.EmailField(unique=True, db_index=True)
+    email = models.EmailField(unique=True, db_index=True)
     username = models.CharField(max_length=30, unique=True, db_index=True)
 
     # ── Name ─────────────────────────────────────────────────────────────────
-    first_name   = models.CharField(max_length=150, blank=True)
-    last_name    = models.CharField(max_length=150, blank=True)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
     display_name = models.CharField(
-        max_length=60, blank=True,
+        max_length=60,
+        blank=True,
         help_text="Optional name shown on profile; falls back to username.",
     )
 
     # ── Profile ───────────────────────────────────────────────────────────────
-    bio            = models.TextField(max_length=500, blank=True)
-    website        = models.URLField(blank=True)
-    avatar         = models.ImageField(
-        upload_to="avatars/", null=True, blank=True,
+    bio = models.TextField(max_length=500, blank=True)
+    website = models.URLField(blank=True)
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        null=True,
+        blank=True,
         help_text="Profile picture — wired to media app in M3.",
     )
-    location       = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=100, blank=True)
 
     # ── LGBTQ+ identity fields (M2, Section 8) ────────────────────────────────
     pronouns = models.CharField(
@@ -63,7 +66,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
     pronouns_custom = models.CharField(
-        max_length=50, blank=True,
+        max_length=50,
+        blank=True,
         help_text="Used when pronouns=CUSTOM.",
     )
     pronouns_visibility = models.CharField(
@@ -81,7 +85,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     gender_identity_visibility = models.CharField(
         max_length=10,
         choices=VisibilityChoices.choices,
-        default=VisibilityChoices.FOLLOWERS,   # hidden from public by default
+        default=VisibilityChoices.FOLLOWERS,  # hidden from public by default
     )
 
     sexual_orientation = models.CharField(
@@ -93,7 +97,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     sexual_orientation_visibility = models.CharField(
         max_length=10,
         choices=VisibilityChoices.choices,
-        default=VisibilityChoices.ONLY_ME,   # outing prevention — hidden by default
+        default=VisibilityChoices.ONLY_ME,  # outing prevention — hidden by default
     )
 
     # ── Privacy & safety (privacy-first defaults per roadmap) ─────────────────
@@ -112,8 +116,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     # ── Account status ────────────────────────────────────────────────────────
-    is_active   = models.BooleanField(default=True)
-    is_staff    = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(
         default=False,
         help_text="Email verified.",
@@ -121,18 +125,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # ── Timestamps ────────────────────────────────────────────────────────────
     date_joined = models.DateTimeField(default=timezone.now)
-    last_seen   = models.DateTimeField(null=True, blank=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     # ── Manager & auth config ─────────────────────────────────────────────────
     objects = UserManager()
 
-    USERNAME_FIELD  = "email"
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
     class Meta:
-        db_table  = "users_user"
-        ordering  = ["-date_joined"]
-        indexes   = [
+        db_table = "users_user"
+        ordering = ["-date_joined"]
+        indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["username"]),
             models.Index(fields=["is_active", "date_joined"]),
@@ -167,11 +171,15 @@ class Follow(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    follower  = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="following_set",
+    follower = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="following_set",
     )
     following = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="follower_set",
+        User,
+        on_delete=models.CASCADE,
+        related_name="follower_set",
     )
     status = models.CharField(
         max_length=10,
@@ -182,9 +190,9 @@ class Follow(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table       = "users_follow"
+        db_table = "users_follow"
         unique_together = [("follower", "following")]
-        indexes        = [
+        indexes = [
             models.Index(fields=["follower", "status"]),
             models.Index(fields=["following", "status"]),
         ]
@@ -202,14 +210,18 @@ class BlockedUser(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    blocker  = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocking_set")
-    blocked  = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocked_by_set")
+    blocker = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="blocking_set"
+    )
+    blocked = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="blocked_by_set"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table       = "users_blocked"
+        db_table = "users_blocked"
         unique_together = [("blocker", "blocked")]
-        indexes        = [
+        indexes = [
             models.Index(fields=["blocker"]),
             models.Index(fields=["blocked"]),
         ]
@@ -227,12 +239,14 @@ class MutedUser(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    muter  = models.ForeignKey(User, on_delete=models.CASCADE, related_name="muting_set")
-    muted  = models.ForeignKey(User, on_delete=models.CASCADE, related_name="muted_by_set")
+    muter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="muting_set")
+    muted = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="muted_by_set"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table       = "users_muted"
+        db_table = "users_muted"
         unique_together = [("muter", "muted")]
 
     def __str__(self) -> str:
@@ -243,25 +257,29 @@ class UserReport(models.Model):
     """Allows users to report abusive/unsafe accounts."""
 
     class Reason(models.TextChoices):
-        HATE_SPEECH    = "hate_speech",    "Hate speech / homophobia / transphobia"
-        HARASSMENT     = "harassment",     "Harassment or bullying"
-        SPAM           = "spam",           "Spam"
-        IMPERSONATION  = "impersonation",  "Impersonation"
-        OUTING         = "outing",         "Outing someone without consent"
-        OTHER          = "other",          "Other"
+        HATE_SPEECH = "hate_speech", "Hate speech / homophobia / transphobia"
+        HARASSMENT = "harassment", "Harassment or bullying"
+        SPAM = "spam", "Spam"
+        IMPERSONATION = "impersonation", "Impersonation"
+        OUTING = "outing", "Outing someone without consent"
+        OTHER = "other", "Other"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    reporter   = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports_filed")
-    reported   = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports_received")
-    reason     = models.CharField(max_length=20, choices=Reason.choices)
-    details    = models.TextField(blank=True, max_length=1000)
-    reviewed   = models.BooleanField(default=False)
+    reporter = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reports_filed"
+    )
+    reported = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reports_received"
+    )
+    reason = models.CharField(max_length=20, choices=Reason.choices)
+    details = models.TextField(blank=True, max_length=1000)
+    reviewed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "users_report"
-        indexes  = [models.Index(fields=["reported", "reviewed"])]
+        indexes = [models.Index(fields=["reported", "reviewed"])]
 
     def __str__(self) -> str:
         return f"Report: {self.reporter.username} → {self.reported.username} ({self.reason})"

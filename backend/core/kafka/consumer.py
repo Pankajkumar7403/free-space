@@ -21,6 +21,7 @@ Usage (in an app's management command or worker)
     consumer = FeedConsumer(group_id="feed-service")
     consumer.start()
 """
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,9 @@ class BaseKafkaConsumer:
     # ── Abstract method ───────────────────────────────────────────────────────
 
     def handle_message(self, topic: str, event_data: dict) -> None:
-        raise NotImplementedError(f"{self.__class__.__name__} must implement handle_message()")
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement handle_message()"
+        )
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -63,7 +66,9 @@ class BaseKafkaConsumer:
         """
         kafka_enabled = getattr(settings, "KAFKA_ENABLED", False)
         if not kafka_enabled:
-            logger.info("%s: KAFKA_ENABLED=False, consumer not started", self.__class__.__name__)
+            logger.info(
+                "%s: KAFKA_ENABLED=False, consumer not started", self.__class__.__name__
+            )
             return
 
         self._setup_consumer()
@@ -71,7 +76,9 @@ class BaseKafkaConsumer:
         self._running = True
         logger.info(
             "%s: starting on topics=%s group=%s",
-            self.__class__.__name__, self.topics, self.group_id,
+            self.__class__.__name__,
+            self.topics,
+            self.group_id,
         )
         self._consume_loop()
 
@@ -83,14 +90,14 @@ class BaseKafkaConsumer:
 
     def _setup_consumer(self) -> None:
         try:
-            from confluent_kafka import Consumer, KafkaException  # type: ignore[import]
+            from confluent_kafka import Consumer  # type: ignore[import]
 
             bootstrap = getattr(settings, "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
             config = {
                 "bootstrap.servers": bootstrap,
                 "group.id": self.group_id,
                 "auto.offset.reset": "earliest",
-                "enable.auto.commit": False,   # manual commit for at-least-once
+                "enable.auto.commit": False,  # manual commit for at-least-once
             }
             self._consumer = Consumer(config)
             self._consumer.subscribe(self.topics)
@@ -99,7 +106,6 @@ class BaseKafkaConsumer:
             raise
 
     def _consume_loop(self) -> None:
-        from confluent_kafka import KafkaException  # type: ignore[import]
 
         try:
             while self._running:
@@ -108,7 +114,9 @@ class BaseKafkaConsumer:
                 if msg is None:
                     continue
                 if msg.error():
-                    logger.error("%s: Kafka error: %s", self.__class__.__name__, msg.error())
+                    logger.error(
+                        "%s: Kafka error: %s", self.__class__.__name__, msg.error()
+                    )
                     continue
 
                 try:
@@ -118,12 +126,14 @@ class BaseKafkaConsumer:
                 except json.JSONDecodeError:
                     logger.error(
                         "%s: failed to deserialise message on topic=%s",
-                        self.__class__.__name__, msg.topic(),
+                        self.__class__.__name__,
+                        msg.topic(),
                     )
                 except Exception:
                     logger.exception(
                         "%s: unhandled error processing message on topic=%s",
-                        self.__class__.__name__, msg.topic(),
+                        self.__class__.__name__,
+                        msg.topic(),
                     )
                     # Don't commit — message will be redelivered (at-least-once)
 

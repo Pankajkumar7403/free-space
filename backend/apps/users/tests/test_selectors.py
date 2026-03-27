@@ -2,14 +2,19 @@
 # ▶  Run:      pytest apps/users/tests/test_selectors.py -v
 
 import pytest
+
 from apps.users.exceptions import UserNotFoundError
 from apps.users.models import BlockedUser, Follow, MutedUser
 from apps.users.selectors import (
-    email_exists, get_blocked_users, get_follower_count,
-    get_followers, get_following, get_following_count,
-    get_muted_users, get_user_by_email, get_user_by_id,
-    get_user_by_username, is_blocked, is_following, is_muted,
-    search_users, username_exists,
+    get_follower_count,
+    get_followers,
+    get_following,
+    get_user_by_email,
+    get_user_by_id,
+    is_blocked,
+    is_following,
+    is_muted,
+    search_users,
 )
 from apps.users.tests.factories import UserFactory
 
@@ -23,6 +28,7 @@ class TestGetUserById:
 
     def test_raises_for_missing_id(self):
         import uuid
+
         with pytest.raises(UserNotFoundError):
             get_user_by_id(uuid.uuid4())
 

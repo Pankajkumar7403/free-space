@@ -9,6 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from apps.feed.events import FeedKafkaConsumer
+
         self.stdout.write("Starting FeedKafkaConsumer...")
         consumer = FeedKafkaConsumer(group_id="feed-service")
         consumer.start()

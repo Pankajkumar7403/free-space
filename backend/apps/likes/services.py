@@ -9,24 +9,30 @@ from django.db import transaction
 
 from apps.likes.cache import has_user_liked, like_decr, like_incr
 from apps.likes.constants import CT_COMMENT, CT_POST
-from apps.likes.exceptions import AlreadyLikedError, LikeTargetNotFoundError, NotLikedError
+from apps.likes.events import emit_like_created
+from apps.likes.exceptions import (
+    AlreadyLikedError,
+    LikeTargetNotFoundError,
+    NotLikedError,
+)
 from apps.likes.models import Like
 from apps.users.models import User
-from apps.likes.events import emit_like_created
 
 logger = logging.getLogger(__name__)
 
 
 def _resolve_content_type(obj) -> tuple[ContentType, str]:
     """Return (ContentType instance, short label) for a Post or Comment."""
-    from apps.posts.models import Post
     from apps.comments.models import Comment
+    from apps.posts.models import Post
 
     if isinstance(obj, Post):
         return ContentType.objects.get_for_model(Post), CT_POST
     if isinstance(obj, Comment):
         return ContentType.objects.get_for_model(Comment), CT_COMMENT
-    raise LikeTargetNotFoundError(message=f"Cannot like object of type {type(obj).__name__}")
+    raise LikeTargetNotFoundError(
+        message=f"Cannot like object of type {type(obj).__name__}"
+    )
 
 
 @transaction.atomic
@@ -44,7 +50,7 @@ def like_object(*, user: User, obj) -> Like:
     Raises AlreadyLikedError if user has already liked this object.
     """
     ct, ct_label = _resolve_content_type(obj)
-    object_id    = str(obj.pk)
+    object_id = str(obj.pk)
 
     # Fast path: check Redis first (avoids DB query on duplicate)
     if has_user_liked(str(user.pk), ct_label, object_id):
@@ -77,7 +83,7 @@ def unlike_object(*, user: User, obj) -> None:
     Raises NotLikedError if the user hasn't liked this object.
     """
     ct, ct_label = _resolve_content_type(obj)
-    object_id    = str(obj.pk)
+    object_id = str(obj.pk)
 
     deleted, _ = Like.objects.filter(
         user=user,
@@ -98,8 +104,9 @@ def get_like_count(*, obj) -> int:
     Redis is the source of truth; falls back to DB count on cache miss.
     """
     from apps.likes.cache import get_like_count as redis_count
+
     ct, ct_label = _resolve_content_type(obj)
-    object_id    = str(obj.pk)
+    object_id = str(obj.pk)
 
     cached = redis_count(ct_label, object_id)
     if cached is not None:
@@ -108,6 +115,7 @@ def get_like_count(*, obj) -> int:
     # Cache miss — count from DB and warm Redis
     db_count = Like.objects.filter(content_type=ct, object_id=obj.pk).count()
     from apps.likes.cache import set_like_count
+
     set_like_count(ct_label, object_id, db_count)
     return db_count
 

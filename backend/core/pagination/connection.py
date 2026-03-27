@@ -22,6 +22,7 @@ Shape
         "totalCount": 42     // optional — omit for huge collections
     }
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

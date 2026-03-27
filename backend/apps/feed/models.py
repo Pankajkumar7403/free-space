@@ -27,25 +27,29 @@ class FeedItem(models.Model):
       (followed user, hashtag subscription, or explore recommendation).
     """
 
-    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user       = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="feed_items",
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="feed_items",
         help_text="The user whose feed this item belongs to.",
     )
-    post_id    = models.UUIDField(db_index=True)
-    score      = models.FloatField(
+    post_id = models.UUIDField(db_index=True)
+    score = models.FloatField(
         default=0.0,
         help_text="Pre-computed ranking score. Higher = shown earlier.",
     )
-    source     = models.CharField(
-        max_length=10, choices=FeedSource.choices, default=FeedSource.FOLLOW,
+    source = models.CharField(
+        max_length=10,
+        choices=FeedSource.choices,
+        default=FeedSource.FOLLOW,
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        db_table        = "feed_item"
+        db_table = "feed_item"
         unique_together = [("user", "post_id")]
-        indexes         = [
+        indexes = [
             models.Index(fields=["user", "score"]),
             models.Index(fields=["user", "created_at"]),
         ]
@@ -60,15 +64,19 @@ class HashtagSubscription(models.Model):
     A user subscribes to a hashtag — their feed includes posts with that tag.
     """
 
-    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hashtag_subscriptions")
-    hashtag    = models.ForeignKey(
-        "posts.Hashtag", on_delete=models.CASCADE, related_name="subscribers",
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="hashtag_subscriptions"
+    )
+    hashtag = models.ForeignKey(
+        "posts.Hashtag",
+        on_delete=models.CASCADE,
+        related_name="subscribers",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table        = "feed_hashtag_subscription"
+        db_table = "feed_hashtag_subscription"
         unique_together = [("user", "hashtag")]
 
     def __str__(self) -> str:

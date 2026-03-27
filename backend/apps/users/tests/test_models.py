@@ -2,9 +2,11 @@
 # ▶  Run:      pytest apps/users/tests/test_models.py -v
 
 import uuid
+
 import pytest
 from django.db import IntegrityError
-from apps.users.models import BlockedUser, Follow, MutedUser, User
+
+from apps.users.models import BlockedUser, Follow
 from apps.users.tests.factories import UserFactory
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]

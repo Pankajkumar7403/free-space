@@ -5,7 +5,6 @@ from __future__ import annotations
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 
-from apps.likes.models import Like
 from apps.users.models import User
 
 

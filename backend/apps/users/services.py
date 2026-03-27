@@ -24,7 +24,6 @@ from apps.users.selectors import (
     get_user_by_id,
     is_blocked,
     is_following,
-    is_muted,
     username_exists,
 )
 from apps.users.validators import (
@@ -33,8 +32,8 @@ from apps.users.validators import (
     validate_username,
 )
 
-
 # ── Input dataclasses ─────────────────────────────────────────────────────────
+
 
 @dataclass
 class CreateUserInput:
@@ -67,6 +66,7 @@ class UpdateProfileInput:
 
 
 # ── Auth services ─────────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def create_user(data: CreateUserInput) -> User:
@@ -124,6 +124,7 @@ def deactivate_user(*, user_id) -> None:
 
 # ── Profile services ──────────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def update_profile(*, user_id, data: UpdateProfileInput) -> User:
     """
@@ -132,7 +133,7 @@ def update_profile(*, user_id, data: UpdateProfileInput) -> User:
     Raises: UserNotFoundError, UsernameAlreadyExistsError
     """
     user = get_user_by_id(user_id)
-    updated_fields: list[str] = [] 
+    updated_fields: list[str] = []
 
     # ── Username uniqueness check ─────────────────────────────────────────────
     if data.username is not None and data.username != user.username:
@@ -144,13 +145,22 @@ def update_profile(*, user_id, data: UpdateProfileInput) -> User:
 
     # ── Simple string fields ──────────────────────────────────────────────────
     simple_fields = [
-        "display_name", "first_name", "last_name", "website",
-        "pronouns", "pronouns_custom", "pronouns_visibility",
-        "gender_identity", "gender_identity_custom", "gender_identity_visibility",
-        "sexual_orientation", "sexual_orientation_custom", "sexual_orientation_visibility",
+        "display_name",
+        "first_name",
+        "last_name",
+        "website",
+        "pronouns",
+        "pronouns_custom",
+        "pronouns_visibility",
+        "gender_identity",
+        "gender_identity_custom",
+        "gender_identity_visibility",
+        "sexual_orientation",
+        "sexual_orientation_custom",
+        "sexual_orientation_visibility",
         "account_privacy",
     ]
-    
+
     for field in simple_fields:
         value = getattr(data, field)
         if value is not None:
@@ -177,6 +187,7 @@ def update_profile(*, user_id, data: UpdateProfileInput) -> User:
 
 # ── Follow services ───────────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def follow_user(*, follower_id, following_id) -> Follow:
     """
@@ -187,7 +198,7 @@ def follow_user(*, follower_id, following_id) -> Follow:
 
     Raises: UserNotFoundError, CannotFollowSelfError, AlreadyFollowingError
     """
-    follower  = get_user_by_id(follower_id)
+    follower = get_user_by_id(follower_id)
     following = get_user_by_id(following_id)
 
     if follower.pk == following.pk:
@@ -200,6 +211,7 @@ def follow_user(*, follower_id, following_id) -> Follow:
         raise UserNotFoundError()  # treat blocked as not found (safety)
 
     from apps.users.constants import AccountPrivacyChoices, FollowStatusChoices
+
     status = (
         FollowStatusChoices.PENDING
         if following.account_privacy == AccountPrivacyChoices.PRIVATE
@@ -217,7 +229,7 @@ def follow_user(*, follower_id, following_id) -> Follow:
 @transaction.atomic
 def unfollow_user(*, follower_id, following_id) -> None:
     """Raises: UserNotFoundError, NotFollowingError"""
-    follower  = get_user_by_id(follower_id)
+    follower = get_user_by_id(follower_id)
     following = get_user_by_id(following_id)
 
     deleted, _ = Follow.objects.filter(follower=follower, following=following).delete()
@@ -229,6 +241,7 @@ def unfollow_user(*, follower_id, following_id) -> None:
 def accept_follow_request(*, user_id, follower_id) -> Follow:
     """Accept a pending follow request. *user_id* is the account owner."""
     from apps.users.constants import FollowStatusChoices
+
     try:
         follow = Follow.objects.get(
             follower_id=follower_id,
@@ -254,6 +267,7 @@ def reject_follow_request(*, user_id, follower_id) -> None:
 
 
 # ── Block / Mute services ─────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def block_user(*, blocker_id, blocked_id) -> BlockedUser:
@@ -307,8 +321,11 @@ def unmute_user(*, muter_id, muted_id) -> None:
 
 # ── Report service ────────────────────────────────────────────────────────────
 
+
 @transaction.atomic
-def report_user(*, reporter_id, reported_id, reason: str, details: str = "") -> UserReport:
+def report_user(
+    *, reporter_id, reported_id, reason: str, details: str = ""
+) -> UserReport:
     reporter = get_user_by_id(reporter_id)
     reported = get_user_by_id(reported_id)
     return UserReport.objects.create(

@@ -1,12 +1,11 @@
 import uuid
+
 import pytest
 
-from apps.notifications.constants import NotificationType
 from apps.notifications.exceptions import NotificationNotFoundError
 from apps.notifications.selectors import (
     get_active_device_tokens,
     get_notification_by_id,
-    get_notification_preferences,
     get_notifications_for_user,
     get_unread_notification_count,
 )
@@ -29,7 +28,7 @@ class TestGetNotificationById:
 class TestGetNotificationsForUser:
 
     def test_returns_only_user_notifications(self, notification_factory, user_factory):
-        user  = user_factory()
+        user = user_factory()
         other = user_factory()
         notification_factory(recipient=user)
         notification_factory(recipient=user)

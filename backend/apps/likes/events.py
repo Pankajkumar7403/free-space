@@ -11,15 +11,15 @@ from core.kafka.topics import Topics
 
 @dataclass
 class LikeCreatedEvent(BaseEvent):
-    event_type:  str = Topics.LIKE_CREATED
-    like_id:     str = ""
-    user_id:     str = ""
-    object_id:   str = ""
-    object_type: str = ""   # "post" or "comment"
-    author_id:   str = ""   # owner of the liked object (for notification routing)
+    event_type: str = Topics.LIKE_CREATED
+    like_id: str = ""
+    user_id: str = ""
+    object_id: str = ""
+    object_type: str = ""  # "post" or "comment"
+    author_id: str = ""  # owner of the liked object (for notification routing)
 
     def to_key(self) -> str:
-        return self.object_id   # partition by object for ordering
+        return self.object_id  # partition by object for ordering
 
 
 def emit_like_created(*, like, ct_label: str, obj) -> None:

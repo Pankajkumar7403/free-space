@@ -18,13 +18,14 @@ Usage
         content = models.TextField()
         # inherits: id (UUID), created_at, updated_at, is_deleted
 """
+
 from __future__ import annotations
 
 import uuid
 
 from django.db import models
 
-from core.database.managers import SoftDeleteManager
+from core.database.managers import SoftDeleteManager, SoftDeleteQuerySet
 
 
 class TimestampMixin(models.Model):
@@ -35,6 +36,12 @@ class TimestampMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):  # type: ignore[override]
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "updated_at" not in update_fields:
+            kwargs["update_fields"] = list(update_fields) + ["updated_at"]
+        return super().save(*args, **kwargs)
 
 
 class SoftDeleteMixin(models.Model):
@@ -58,13 +65,14 @@ class SoftDeleteMixin(models.Model):
     # Replace the default manager with our soft-delete-aware one.
     objects = SoftDeleteManager()
     # Keep a backdoor for admin/migrations that need ALL rows.
-    all_objects = models.Manager()
+    all_objects = SoftDeleteQuerySet.as_manager()
 
     class Meta:
         abstract = True
 
     def soft_delete(self) -> None:
         from django.utils import timezone
+
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save(update_fields=["is_deleted", "deleted_at"])

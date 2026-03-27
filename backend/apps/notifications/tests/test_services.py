@@ -1,9 +1,9 @@
 import uuid
-import pytest
-from unittest.mock import patch, MagicMock
-from django.utils import timezone
+from unittest.mock import patch
 
-from apps.notifications.constants import NotificationType, DevicePlatform
+import pytest
+
+from apps.notifications.constants import DevicePlatform, NotificationType
 from apps.notifications.exceptions import (
     NotificationNotFoundError,
     UnauthorizedNotificationError,
@@ -25,7 +25,7 @@ class TestCreateNotification:
 
     @patch("apps.notifications.dispatchers.dispatch_notification")
     def test_creates_notification_and_dispatches(self, mock_dispatch, user_factory):
-        actor     = user_factory()
+        actor = user_factory()
         recipient = user_factory()
 
         notif = create_notification(
@@ -55,7 +55,7 @@ class TestCreateNotification:
 
     @patch("apps.notifications.dispatchers.dispatch_notification")
     def test_message_template_follow(self, mock_dispatch, user_factory):
-        actor     = user_factory()
+        actor = user_factory()
         recipient = user_factory()
         notif = create_notification(
             recipient_id=recipient.id,
@@ -66,9 +66,11 @@ class TestCreateNotification:
         assert actor.username in notif.message
 
     @patch("apps.notifications.dispatchers.dispatch_notification")
-    def test_creates_notification_with_target(self, mock_dispatch, user_factory, post_factory):
+    def test_creates_notification_with_target(
+        self, mock_dispatch, user_factory, post_factory
+    ):
         actor = user_factory()
-        post  = post_factory()
+        post = post_factory()
         notif = create_notification(
             recipient_id=post.author_id,
             actor_id=actor.id,
@@ -124,7 +126,7 @@ class TestMarkAllRead:
         user = user_factory()
         notification_factory(recipient=user, is_read=False)
         notification_factory(recipient=user, is_read=False)
-        notification_factory(recipient=user, is_read=True)   # already read
+        notification_factory(recipient=user, is_read=True)  # already read
 
         count = mark_all_notifications_read(user_id=user.id)
 
@@ -168,12 +170,18 @@ class TestDeviceTokenServices:
 
     def test_register_is_idempotent(self, user_factory):
         user = user_factory()
-        register_device_token(user_id=user.id, token="idempotent-token", platform=DevicePlatform.IOS)
-        register_device_token(user_id=user.id, token="idempotent-token", platform=DevicePlatform.IOS)
-        assert DeviceToken.objects.filter(user=user, token="idempotent-token").count() == 1
+        register_device_token(
+            user_id=user.id, token="idempotent-token", platform=DevicePlatform.IOS
+        )
+        register_device_token(
+            user_id=user.id, token="idempotent-token", platform=DevicePlatform.IOS
+        )
+        assert (
+            DeviceToken.objects.filter(user=user, token="idempotent-token").count() == 1
+        )
 
     def test_deregister_sets_inactive(self, user_factory, device_token_factory):
-        user  = user_factory()
+        user = user_factory()
         token = device_token_factory(user=user, token="deregister-me")
         deregister_device_token(user_id=user.id, token="deregister-me")
         token.refresh_from_db()

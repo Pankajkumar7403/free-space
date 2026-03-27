@@ -7,11 +7,9 @@ import logging
 from django.db import transaction
 
 from apps.feed.cache import explore_push
-from apps.feed.constants import FeedSource
-from apps.feed.models import FeedItem, HashtagSubscription
+from apps.feed.models import HashtagSubscription
 from apps.feed.ranking import recency_score
 from apps.posts.models import Hashtag, Post
-from apps.users.models import User
 from apps.users.selectors import get_user_by_id
 
 logger = logging.getLogger(__name__)
@@ -22,9 +20,9 @@ def subscribe_to_hashtag(*, user_id, hashtag_name: str) -> HashtagSubscription:
     """
     Subscribe a user to a hashtag so their feed includes posts with that tag.
     """
-    user    = get_user_by_id(user_id)
+    user = get_user_by_id(user_id)
     hashtag, _ = Hashtag.objects.get_or_create(name=hashtag_name.lower())
-    sub, _  = HashtagSubscription.objects.get_or_create(user=user, hashtag=hashtag)
+    sub, _ = HashtagSubscription.objects.get_or_create(user=user, hashtag=hashtag)
     return sub
 
 
@@ -68,4 +66,5 @@ def on_user_unfollow(*, follower_id: str) -> None:
     Invalidates their Redis feed so stale posts are removed.
     """
     from apps.feed.fanout import invalidate_user_feed
+
     invalidate_user_feed(user_id=follower_id)

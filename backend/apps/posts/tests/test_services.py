@@ -1,12 +1,13 @@
 # 📁 Location: backend/apps/posts/tests/test_services.py
 # ▶  Run:      pytest apps/posts/tests/test_services.py -v
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from apps.posts.constants import PostStatus, PostVisibility
-from apps.posts.exceptions import PostEditForbiddenError, PostNotFoundError
-from apps.posts.models import Hashtag, Post, PostHashtag
+from apps.posts.exceptions import PostEditForbiddenError
+from apps.posts.models import Hashtag, Post
 from apps.posts.services import (
     CreatePostInput,
     UpdatePostInput,
@@ -15,7 +16,7 @@ from apps.posts.services import (
     extract_hashtags,
     update_post,
 )
-from apps.posts.tests.factories import MediaFactory, PostFactory
+from apps.posts.tests.factories import MediaFactory
 from apps.users.tests.factories import UserFactory
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
@@ -65,20 +66,24 @@ class TestExtractHashtags:
 class TestCreatePost:
     @patch("apps.posts.services.emit_post_created")
     def test_creates_post_successfully(self, mock_emit, db, user):
-        post = create_post(CreatePostInput(
-            author_id=user.pk,
-            content="Hello #world this is my first post",
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=user.pk,
+                content="Hello #world this is my first post",
+            )
+        )
         assert post.pk is not None
         assert post.author == user
         assert post.status == PostStatus.PUBLISHED
 
     @patch("apps.posts.services.emit_post_created")
     def test_extracts_and_saves_hashtags(self, mock_emit, db, user):
-        post = create_post(CreatePostInput(
-            author_id=user.pk,
-            content="Celebrating #pride and #lgbtq community",
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=user.pk,
+                content="Celebrating #pride and #lgbtq community",
+            )
+        )
         tag_names = list(post.hashtags.values_list("name", flat=True))
         assert "pride" in tag_names
         assert "lgbtq" in tag_names
@@ -97,30 +102,36 @@ class TestCreatePost:
 
     @patch("apps.posts.services.emit_post_created")
     def test_respects_explicit_visibility(self, mock_emit, db, user):
-        post = create_post(CreatePostInput(
-            author_id=user.pk,
-            content="public post",
-            visibility=PostVisibility.PUBLIC,
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=user.pk,
+                content="public post",
+                visibility=PostVisibility.PUBLIC,
+            )
+        )
         assert post.visibility == PostVisibility.PUBLIC
 
     @patch("apps.posts.services.emit_post_created")
     def test_anonymous_post(self, mock_emit, db, user):
-        post = create_post(CreatePostInput(
-            author_id=user.pk,
-            content="anonymous post",
-            is_anonymous=True,
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=user.pk,
+                content="anonymous post",
+                is_anonymous=True,
+            )
+        )
         assert post.is_anonymous is True
 
     @patch("apps.posts.services.emit_post_created")
     def test_attaches_media(self, mock_emit, db, user):
         media = MediaFactory(owner=user)
-        post  = create_post(CreatePostInput(
-            author_id=user.pk,
-            content="post with media",
-            media_ids=[media.pk],
-        ))
+        post = create_post(
+            CreatePostInput(
+                author_id=user.pk,
+                content="post with media",
+                media_ids=[media.pk],
+            )
+        )
         assert post.media.filter(pk=media.pk).exists()
 
     @patch("apps.posts.services.emit_post_created")
@@ -131,11 +142,13 @@ class TestCreatePost:
 
     def test_raises_on_empty_content(self, db, user):
         from core.exceptions.base import ValidationError
+
         with pytest.raises(ValidationError):
             create_post(CreatePostInput(author_id=user.pk, content=""))
 
     def test_raises_on_content_too_long(self, db, user):
         from core.exceptions.base import ValidationError
+
         with pytest.raises(ValidationError):
             create_post(CreatePostInput(author_id=user.pk, content="x" * 2201))
 
@@ -143,7 +156,7 @@ class TestCreatePost:
 class TestUpdatePost:
     @patch("apps.posts.services.emit_post_created")
     def test_updates_content(self, mock_emit, db, user):
-        post    = create_post(CreatePostInput(author_id=user.pk, content="original"))
+        post = create_post(CreatePostInput(author_id=user.pk, content="original"))
         updated = update_post(
             post_id=post.pk,
             requesting_user_id=user.pk,
@@ -165,7 +178,7 @@ class TestUpdatePost:
 
     @patch("apps.posts.services.emit_post_created")
     def test_updates_visibility(self, mock_emit, db, user):
-        post    = create_post(CreatePostInput(author_id=user.pk, content="test"))
+        post = create_post(CreatePostInput(author_id=user.pk, content="test"))
         updated = update_post(
             post_id=post.pk,
             requesting_user_id=user.pk,
@@ -176,7 +189,7 @@ class TestUpdatePost:
     @patch("apps.posts.services.emit_post_created")
     def test_raises_if_not_author(self, mock_emit, db, user):
         other = UserFactory()
-        post  = create_post(CreatePostInput(author_id=user.pk, content="test"))
+        post = create_post(CreatePostInput(author_id=user.pk, content="test"))
         with pytest.raises(PostEditForbiddenError):
             update_post(
                 post_id=post.pk,
@@ -198,7 +211,7 @@ class TestDeletePost:
     @patch("apps.posts.services.emit_post_deleted")
     def test_raises_if_not_author(self, mock_del, mock_create, db, user):
         other = UserFactory()
-        post  = create_post(CreatePostInput(author_id=user.pk, content="mine"))
+        post = create_post(CreatePostInput(author_id=user.pk, content="mine"))
         with pytest.raises(PostEditForbiddenError):
             delete_post(post_id=post.pk, requesting_user_id=other.pk)
 

@@ -7,12 +7,13 @@ Extends Simple JWT's JWTAuthentication to:
   1. Check our Redis blacklist on every request (instant token revocation).
   2. Include the request_id in auth failure logs.
 """
+
 from __future__ import annotations
 
 import logging
 
 from rest_framework_simplejwt.authentication import JWTAuthentication  # type: ignore[import]
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError  # type: ignore[import]
+from rest_framework_simplejwt.exceptions import InvalidToken  # type: ignore[import]
 
 from core.redis.cache import is_token_blacklisted
 

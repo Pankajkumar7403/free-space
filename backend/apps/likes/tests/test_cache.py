@@ -2,11 +2,15 @@
 # ▶  Run:      pytest apps/likes/tests/test_cache.py -v
 
 import pytest
-from core.redis.client import get_redis_client, reset_client
+
 from apps.likes.cache import (
-    get_like_count, has_user_liked, like_decr,
-    like_incr, set_like_count,
+    get_like_count,
+    has_user_liked,
+    like_decr,
+    like_incr,
+    set_like_count,
 )
+from core.redis.client import get_redis_client, reset_client
 
 pytestmark = pytest.mark.unit
 

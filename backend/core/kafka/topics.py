@@ -9,6 +9,7 @@ Convention
 ----------
   <domain>.<event_verb>   e.g.  post.created, user.followed
 """
+
 from __future__ import annotations
 
 
@@ -43,6 +44,7 @@ class Topics:
     def all(cls) -> list[str]:
         """Return all registered topic name strings."""
         return [
-            v for k, v in vars(cls).items()
+            v
+            for k, v in vars(cls).items()
             if not k.startswith("_") and isinstance(v, str)
         ]

@@ -2,6 +2,7 @@
 # ▶  Run:      pytest apps/users/tests/test_views.py -v
 
 import pytest
+
 from apps.users.tests.factories import UserFactory
 from core.testing.base import BaseAPITestCase
 
@@ -12,11 +13,14 @@ class TestRegisterView(BaseAPITestCase):
     url = "/api/v1/users/register/"
 
     def test_register_success(self):
-        res = self.client.post(self.url, {
-            "email": "new@example.com",
-            "username": "newuser",
-            "password": "securepass123",
-        })
+        res = self.client.post(
+            self.url,
+            {
+                "email": "new@example.com",
+                "username": "newuser",
+                "password": "securepass123",
+            },
+        )
         self.assert_created(res)
         assert res.data["user"]["email"] == "new@example.com"
         assert "access" in res.data
@@ -24,9 +28,10 @@ class TestRegisterView(BaseAPITestCase):
 
     def test_register_duplicate_email(self):
         UserFactory(email="dup@example.com")
-        res = self.client.post(self.url, {
-            "email": "dup@example.com", "username": "other99", "password": "pass1234"
-        })
+        res = self.client.post(
+            self.url,
+            {"email": "dup@example.com", "username": "other99", "password": "pass1234"},
+        )
         self.assert_status(res, 409)
         self.assert_error_code(res, "EMAIL_TAKEN")
 
@@ -35,9 +40,10 @@ class TestRegisterView(BaseAPITestCase):
         self.assert_bad_request(res)
 
     def test_register_invalid_email(self):
-        res = self.client.post(self.url, {
-            "email": "not-valid", "username": "someone", "password": "pass1234"
-        })
+        res = self.client.post(
+            self.url,
+            {"email": "not-valid", "username": "someone", "password": "pass1234"},
+        )
         self.assert_bad_request(res)
 
 
@@ -51,13 +57,17 @@ class TestLoginView(BaseAPITestCase):
         self.user.save()
 
     def test_login_success(self):
-        res = self.client.post(self.url, {"email": self.user.email, "password": "mypassword"})
+        res = self.client.post(
+            self.url, {"email": self.user.email, "password": "mypassword"}
+        )
         self.assert_ok(res)
         assert "access" in res.data
         assert "refresh" in res.data
 
     def test_login_wrong_password(self):
-        res = self.client.post(self.url, {"email": self.user.email, "password": "wrong"})
+        res = self.client.post(
+            self.url, {"email": self.user.email, "password": "wrong"}
+        )
         self.assert_unauthorized(res)
         self.assert_error_code(res, "INVALID_CREDENTIALS")
 
@@ -113,6 +123,7 @@ class TestUserDetailView(BaseAPITestCase):
 
     def test_404_on_nonexistent_user(self):
         import uuid
+
         res = self.client.get(f"/api/v1/users/{uuid.uuid4()}/")
         self.assert_not_found(res)
         self.assert_error_code(res, "USER_NOT_FOUND")

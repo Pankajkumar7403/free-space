@@ -7,5 +7,5 @@ LIKE_COUNTER_TTL = 60 * 60 * 24
 RECONCILE_INTERVAL = 60 * 5
 
 # Likeable content type labels (used in Redis keys)
-CT_POST    = "post"
+CT_POST = "post"
 CT_COMMENT = "comment"

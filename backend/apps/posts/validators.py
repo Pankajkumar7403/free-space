@@ -11,9 +11,9 @@ from apps.posts.exceptions import (
 from core.exceptions.base import ValidationError
 
 # ── Limits ────────────────────────────────────────────────────────────────────
-MAX_POST_LENGTH      = 2200
-MAX_MEDIA_PER_POST   = 10
-MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024   # 20 MB
+MAX_POST_LENGTH = 2200
+MAX_MEDIA_PER_POST = 10
+MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB
 MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024  # 500 MB
 
 ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/gif", "image/webp"}
@@ -23,7 +23,9 @@ ALLOWED_MIME_TYPES = ALLOWED_IMAGE_MIME | ALLOWED_VIDEO_MIME
 
 def validate_post_content(content: str) -> None:
     if not content or not content.strip():
-        raise ValidationError("Post content cannot be empty.", code="POST_CONTENT_EMPTY")
+        raise ValidationError(
+            "Post content cannot be empty.", code="POST_CONTENT_EMPTY"
+        )
     if len(content) > MAX_POST_LENGTH:
         raise ValidationError(
             f"Post content cannot exceed {MAX_POST_LENGTH} characters.",
@@ -46,7 +48,11 @@ def validate_media_mime_type(mime_type: str) -> str:
     mime_type = mime_type.lower().strip()
     if mime_type not in ALLOWED_MIME_TYPES:
         raise InvalidMediaTypeError(detail={"mime_type": mime_type})
-    return MediaType.IMAGE if mime_type in ALLOWED_IMAGE_MIME else MediaType.VIDEO
+    return (
+        str(MediaType.IMAGE)
+        if mime_type in ALLOWED_IMAGE_MIME
+        else str(MediaType.VIDEO)
+    )
 
 
 def validate_file_size(size_bytes: int, mime_type: str) -> None:

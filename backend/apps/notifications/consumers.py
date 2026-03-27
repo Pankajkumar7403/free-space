@@ -18,6 +18,7 @@ Channel Group
   a new notification is created.  All connected tabs/devices for that
   user receive it simultaneously.
 """
+
 from __future__ import annotations
 
 import logging
@@ -42,8 +43,8 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4001)
             return
 
-        self.user_id   = str(user.id)
-        self.user      = user
+        self.user_id = str(user.id)
+        self.user = user
         self.group_name = get_notification_group(user.id)
 
         # Join per-user channel group
@@ -52,10 +53,12 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         # Send handshake with current unread count
         unread = await self._get_unread_count()
-        await self.send_json({
-            "type":         "connected",
-            "unread_count": unread,
-        })
+        await self.send_json(
+            {
+                "type": "connected",
+                "unread_count": unread,
+            }
+        )
         logger.info(
             "ws.connected",
             extra={"user_id": self.user_id, "channel": self.channel_name},
@@ -63,9 +66,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         if hasattr(self, "group_name"):
-            await self.channel_layer.group_discard(
-                self.group_name, self.channel_name
-            )
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
         logger.info(
             "ws.disconnected",
             extra={
@@ -90,20 +91,24 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 updated = await self._mark_read(notification_id)
                 if updated:
                     unread = await self._get_unread_count()
-                    await self.send_json({
-                        "type":            "notification_updated",
-                        "notification_id": notification_id,
-                        "is_read":         True,
-                        "unread_count":    unread,
-                    })
+                    await self.send_json(
+                        {
+                            "type": "notification_updated",
+                            "notification_id": notification_id,
+                            "is_read": True,
+                            "unread_count": unread,
+                        }
+                    )
 
         elif action == "mark_all_read":
             count = await self._mark_all_read()
-            await self.send_json({
-                "type":         "all_notifications_read",
-                "marked_count": count,
-                "unread_count": 0,
-            })
+            await self.send_json(
+                {
+                    "type": "all_notifications_read",
+                    "marked_count": count,
+                    "unread_count": 0,
+                }
+            )
 
         elif action == "ping":
             await self.send_json({"type": "pong"})
@@ -121,18 +126,22 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _get_unread_count(self) -> int:
-        from apps.notifications.selectors import get_unread_notification_count
         import uuid
+
+        from apps.notifications.selectors import get_unread_notification_count
+
         return get_unread_notification_count(uuid.UUID(self.user_id))
 
     @database_sync_to_async
     def _mark_read(self, notification_id_str: str) -> bool:
         import uuid
-        from apps.notifications.services import mark_notification_read
+
         from apps.notifications.exceptions import (
             NotificationNotFoundError,
             UnauthorizedNotificationError,
         )
+        from apps.notifications.services import mark_notification_read
+
         try:
             mark_notification_read(
                 notification_id=uuid.UUID(notification_id_str),
@@ -145,5 +154,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def _mark_all_read(self) -> int:
         import uuid
+
         from apps.notifications.services import mark_all_notifications_read
+
         return mark_all_notifications_read(user_id=uuid.UUID(self.user_id))

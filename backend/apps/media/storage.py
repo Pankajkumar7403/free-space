@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 
 if TYPE_CHECKING:
-    from apps.posts.models import Media
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 _ALLOWED_EXTENSIONS = {
     "image/jpeg": "jpg",
-    "image/png":  "png",
-    "image/gif":  "gif",
+    "image/png": "png",
+    "image/gif": "gif",
     "image/webp": "webp",
-    "video/mp4":  "mp4",
+    "video/mp4": "mp4",
     "video/quicktime": "mov",
 }
 
@@ -34,9 +34,10 @@ def build_s3_key(prefix: str, mime_type: str) -> str:
     Example: originals/2025/01/550e8400-e29b-41d4-a716.jpg
     """
     from django.utils import timezone
-    now  = timezone.now()
-    ext  = _ALLOWED_EXTENSIONS.get(mime_type, "bin")
-    uid  = str(uuid.uuid4())
+
+    now = timezone.now()
+    ext = _ALLOWED_EXTENSIONS.get(mime_type, "bin")
+    uid = str(uuid.uuid4())
     return f"{prefix}/{now.year}/{now.month:02d}/{uid}.{ext}"
 
 
@@ -56,7 +57,6 @@ def generate_presigned_upload_url(
         Returns a real presigned S3 PUT URL.
     """
     bucket = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
-    use_minio = getattr(settings, "USE_MINIO", False)
 
     if not bucket or getattr(settings, "USE_FAKE_S3", False):
         logger.debug("generate_presigned_upload_url: using fake URL (no S3 configured)")
@@ -64,6 +64,7 @@ def generate_presigned_upload_url(
 
     try:
         import boto3
+
         endpoint = getattr(settings, "AWS_S3_ENDPOINT_URL", None)
         client = boto3.client(
             "s3",
@@ -106,6 +107,7 @@ def delete_s3_object(s3_key: str) -> None:
 
     try:
         import boto3
+
         client = boto3.client("s3")
         client.delete_object(Bucket=bucket, Key=s3_key)
         logger.info("Deleted S3 object: %s", s3_key)

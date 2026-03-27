@@ -7,6 +7,7 @@ Tests for core/redis/rate_limit.py
 
 Uses fakeredis — no real Redis needed.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -53,7 +54,7 @@ class TestRateLimiter:
         r2 = RateLimiter(key="register", identifier="user:3", limit=1, window=60)
         r1.allow()
         assert r1.allow() is False
-        assert r2.allow() is True   # different action, separate bucket
+        assert r2.allow() is True  # different action, separate bucket
 
     def test_check_returns_result_object(self):
         limiter = RateLimiter(key="check", identifier="user:4", limit=5, window=60)

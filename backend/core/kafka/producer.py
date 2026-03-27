@@ -18,6 +18,7 @@ Usage
     producer = get_producer()
     producer.send(Topics.POST_CREATED, event)   # event is a BaseEvent instance
 """
+
 from __future__ import annotations
 
 import json
@@ -70,6 +71,7 @@ class KafkaProducer:
 
     def __init__(self, config: dict) -> None:
         from confluent_kafka import Producer  # type: ignore[import]
+
         self._producer = Producer(config)
         logger.info("KafkaProducer: connected to %s", config.get("bootstrap.servers"))
 
@@ -119,6 +121,7 @@ class KafkaProducer:
 
 # ── Singleton factory ─────────────────────────────────────────────────────────
 
+
 def get_producer() -> KafkaProducer | MockKafkaProducer:
     """
     Return the module-level producer singleton.
@@ -140,12 +143,14 @@ def get_producer() -> KafkaProducer | MockKafkaProducer:
         return _producer_instance
 
     try:
-        bootstrap_servers = getattr(settings, "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+        bootstrap_servers = getattr(
+            settings, "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
+        )
         config = {
             "bootstrap.servers": bootstrap_servers,
-            "acks": "all",                # wait for all replicas
+            "acks": "all",  # wait for all replicas
             "retries": 3,
-            "linger.ms": 5,               # micro-batching
+            "linger.ms": 5,  # micro-batching
             "compression.type": "snappy",
         }
         _producer_instance = KafkaProducer(config)

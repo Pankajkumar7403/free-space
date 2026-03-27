@@ -21,7 +21,6 @@ from apps.users.serializers import (
     LoginSerializer,
     RefreshTokenSerializer,
     RegisterSerializer,
-    TokenResponseSerializer,
     UpdateProfileSerializer,
     UserPrivateSerializer,
     UserPublicSerializer,
@@ -48,6 +47,7 @@ from core.security.jwt import blacklist_refresh_token, create_token_pair
 
 class RegisterView(APIView):
     """POST /api/v1/users/register/"""
+
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
@@ -55,11 +55,13 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         d = serializer.validated_data
 
-        user = create_user(CreateUserInput(
-            email=d["email"],
-            username=d["username"],
-            password=d["password"],
-        ))
+        user = create_user(
+            CreateUserInput(
+                email=d["email"],
+                username=d["username"],
+                password=d["password"],
+            )
+        )
         tokens = create_token_pair(user)
         return Response(
             {"user": UserPrivateSerializer(user).data, **tokens},
@@ -69,6 +71,7 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     """POST /api/v1/users/login/"""
+
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
@@ -83,6 +86,7 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     """POST /api/v1/users/logout/  — blacklists the refresh token."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -94,6 +98,7 @@ class LogoutView(APIView):
 
 class UserDetailView(APIView):
     """GET/PATCH/DELETE /api/v1/users/<user_id>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id) -> Response:
@@ -130,6 +135,7 @@ class UserDetailView(APIView):
 
 class UserByUsernameView(APIView):
     """GET /api/v1/users/by-username/<username>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, username: str) -> Response:
@@ -141,6 +147,7 @@ class UserByUsernameView(APIView):
 
 class MeView(APIView):
     """GET /api/v1/users/me/  — shortcut for own profile."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -149,6 +156,7 @@ class MeView(APIView):
 
 class UserSearchView(APIView):
     """GET /api/v1/users/search/?q=<query>"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -159,13 +167,17 @@ class UserSearchView(APIView):
         qs = search_users(query, exclude_user=request.user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(UserPublicSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            UserPublicSerializer(page, many=True).data
+        )
 
 
 # ── Follow views ───────────────────────────────────────────────────────────────
 
+
 class FollowView(APIView):
     """POST /api/v1/users/<user_id>/follow/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, user_id) -> Response:
@@ -175,6 +187,7 @@ class FollowView(APIView):
 
 class UnfollowView(APIView):
     """DELETE /api/v1/users/<user_id>/follow/"""
+
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request, user_id) -> Response:
@@ -184,6 +197,7 @@ class UnfollowView(APIView):
 
 class FollowersListView(APIView):
     """GET /api/v1/users/<user_id>/followers/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id) -> Response:
@@ -191,11 +205,14 @@ class FollowersListView(APIView):
         qs = get_followers(user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(UserPublicSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            UserPublicSerializer(page, many=True).data
+        )
 
 
 class FollowingListView(APIView):
     """GET /api/v1/users/<user_id>/following/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id) -> Response:
@@ -203,11 +220,14 @@ class FollowingListView(APIView):
         qs = get_following(user)
         paginator = CursorPagination()
         page = paginator.paginate_queryset(qs, request)
-        return paginator.get_paginated_response(UserPublicSerializer(page, many=True).data)
+        return paginator.get_paginated_response(
+            UserPublicSerializer(page, many=True).data
+        )
 
 
 class FollowRequestAcceptView(APIView):
     """POST /api/v1/users/follow-requests/<follower_id>/accept/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, follower_id) -> Response:
@@ -217,6 +237,7 @@ class FollowRequestAcceptView(APIView):
 
 class FollowRequestRejectView(APIView):
     """DELETE /api/v1/users/follow-requests/<follower_id>/"""
+
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request, follower_id) -> Response:
@@ -226,8 +247,10 @@ class FollowRequestRejectView(APIView):
 
 # ── Block / Mute views ────────────────────────────────────────────────────────
 
+
 class BlockView(APIView):
     """POST/DELETE /api/v1/users/<user_id>/block/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, user_id) -> Response:
@@ -241,6 +264,7 @@ class BlockView(APIView):
 
 class MuteView(APIView):
     """POST/DELETE /api/v1/users/<user_id>/mute/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, user_id) -> Response:

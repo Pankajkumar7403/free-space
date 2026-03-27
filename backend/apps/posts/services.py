@@ -6,11 +6,10 @@ import re
 from dataclasses import dataclass, field
 
 from django.db import transaction
-from django.utils import timezone
 
 from apps.posts.constants import PostStatus, PostVisibility
 from apps.posts.events import emit_post_created, emit_post_deleted
-from apps.posts.exceptions import PostEditForbiddenError, PostNotFoundError
+from apps.posts.exceptions import PostEditForbiddenError
 from apps.posts.models import Hashtag, Post, PostHashtag
 from apps.posts.selectors import get_post_by_id
 from apps.posts.validators import validate_post_content
@@ -28,28 +27,30 @@ def extract_hashtags(content: str) -> list[str]:
 
 # ── Input dataclasses ─────────────────────────────────────────────────────────
 
+
 @dataclass
 class CreatePostInput:
-    author_id:      object
-    content:        str
-    visibility:     str = PostVisibility.FOLLOWERS_ONLY
+    author_id: object
+    content: str
+    visibility: str = str(PostVisibility.FOLLOWERS_ONLY)
     allow_comments: bool = True
-    is_anonymous:   bool = False
-    location_name:  str = ""
-    latitude:       float | None = None
-    longitude:      float | None = None
-    media_ids:      list = field(default_factory=list)
+    is_anonymous: bool = False
+    location_name: str = ""
+    latitude: float | None = None
+    longitude: float | None = None
+    media_ids: list = field(default_factory=list)
 
 
 @dataclass
 class UpdatePostInput:
-    content:        str | None = None
-    visibility:     str | None = None
+    content: str | None = None
+    visibility: str | None = None
     allow_comments: bool | None = None
-    location_name:  str | None = None
+    location_name: str | None = None
 
 
 # ── Services ──────────────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def create_post(data: CreatePostInput) -> Post:
@@ -156,6 +157,7 @@ def delete_post(*, post_id, requesting_user_id) -> None:
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 def _upsert_hashtags(post: Post, tag_names: list[str]) -> None:
     """
     Get-or-create Hashtag rows, then bulk-create PostHashtag links.
@@ -180,6 +182,7 @@ def _attach_media(post: Post, media_ids: list, author: User) -> None:
     for position, media_id in enumerate(media_ids[:10]):
         media = get_media_by_id(media_id, owner=author)
         PostMedia.objects.get_or_create(
-            post=post, media=media,
+            post=post,
+            media=media,
             defaults={"position": position},
         )

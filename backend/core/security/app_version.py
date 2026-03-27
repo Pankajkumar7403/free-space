@@ -14,10 +14,10 @@ Configuration (settings.py)
     APP_MIN_VERSION = "1.0.0"   # clients older than this are rejected
     APP_VERSION_HEADER = "X-App-Version"   # default
 """
+
 from __future__ import annotations
 
 import logging
-from functools import lru_cache
 
 from django.conf import settings
 from django.http import JsonResponse

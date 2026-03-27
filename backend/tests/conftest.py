@@ -4,13 +4,14 @@ Root conftest.py — project-wide pytest fixtures.
 Place fixtures that should be available to EVERY test here.
 App-specific fixtures live in apps/<app>/tests/conftest.py.
 """
+
 from __future__ import annotations
 
 import pytest
 from rest_framework.test import APIClient
 
-
 # ── Database access ───────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="session")
 def django_db_setup():
@@ -19,6 +20,7 @@ def django_db_setup():
 
 
 # ── Core fixtures ─────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def api_client() -> APIClient:
@@ -46,6 +48,7 @@ def staff_client(api_client: APIClient, staff_user):
 
 
 # ── Marker auto-use ───────────────────────────────────────────────────────────
+
 
 def pytest_collection_modifyitems(items):
     """

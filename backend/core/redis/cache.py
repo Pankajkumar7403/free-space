@@ -18,6 +18,7 @@ Key schema
     rate:{action}:{identifier}  str   — rate limit counter
     session:{token_jti}         str   — JWT blacklist entry
 """
+
 from __future__ import annotations
 
 import json
@@ -29,12 +30,13 @@ from core.redis.client import get_redis_client
 logger = logging.getLogger(__name__)
 
 # ── Default TTLs (seconds) ────────────────────────────────────────────────────
-FEED_TTL = 60 * 60 * 24 * 7     # 7 days
-COUNTER_TTL = 60 * 60 * 24      # 24 hours
-SESSION_TTL = 60 * 60 * 24 * 30 # 30 days (refresh token lifetime)
+FEED_TTL = 60 * 60 * 24 * 7  # 7 days
+COUNTER_TTL = 60 * 60 * 24  # 24 hours
+SESSION_TTL = 60 * 60 * 24 * 30  # 30 days (refresh token lifetime)
 
 
 # ── Generic helpers ───────────────────────────────────────────────────────────
+
 
 def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
     """Serialise *value* to JSON and store it in Redis."""
@@ -74,6 +76,7 @@ def cache_delete_pattern(pattern: str) -> int:
 
 # ── Counter helpers (likes, view counts) ─────────────────────────────────────
 
+
 def counter_incr(key: str, ttl: int = COUNTER_TTL) -> int:
     """Atomically increment a counter; sets TTL on first creation."""
     client = get_redis_client()
@@ -89,7 +92,7 @@ def counter_decr(key: str) -> int:
     client = get_redis_client()
     pipe = client.pipeline()
     pipe.decr(key)
-    result, = pipe.execute()[:1]
+    (result,) = pipe.execute()[:1]
     # Prevent negative counts from cache drift
     if result < 0:
         client.set(key, 0)
@@ -105,6 +108,7 @@ def counter_get(key: str) -> int:
 
 
 # ── Feed sorted set helpers ───────────────────────────────────────────────────
+
 
 def feed_push(user_id: str, post_id: str, score: float) -> None:
     """Add *post_id* to a user's feed sorted set with *score* (Unix timestamp)."""
@@ -133,6 +137,7 @@ def feed_remove(user_id: str, post_id: str) -> None:
 
 
 # ── JWT blacklist helpers ─────────────────────────────────────────────────────
+
 
 def blacklist_token(jti: str, ttl: int = SESSION_TTL) -> None:
     """Mark a JWT (by its jti claim) as revoked."""

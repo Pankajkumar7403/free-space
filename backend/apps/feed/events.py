@@ -42,6 +42,7 @@ class FeedKafkaConsumer(BaseKafkaConsumer):
 
     def _handle_post_created(self, data: dict) -> None:
         from apps.feed.tasks import fanout_post_task
+
         fanout_post_task.delay(
             post_id=data["post_id"],
             author_id=data["author_id"],
@@ -52,6 +53,7 @@ class FeedKafkaConsumer(BaseKafkaConsumer):
 
     def _handle_post_deleted(self, data: dict) -> None:
         from apps.feed.fanout import remove_post_from_feeds
+
         remove_post_from_feeds(
             post_id=data["post_id"],
             author_id=data["author_id"],
@@ -59,5 +61,6 @@ class FeedKafkaConsumer(BaseKafkaConsumer):
 
     def _handle_user_followed(self, data: dict) -> None:
         from apps.feed.tasks import warm_user_feed_task
+
         # When someone follows a new person, warm their feed
         warm_user_feed_task.delay(user_id=data.get("follower_id", ""))

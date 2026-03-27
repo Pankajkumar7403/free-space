@@ -1,6 +1,6 @@
 # 📁 Location: backend/apps/users/permissions.py
 
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission
 
 
 class IsOwner(BasePermission):
@@ -8,6 +8,7 @@ class IsOwner(BasePermission):
     Allow access only if the requesting user owns the object.
     The view must set `obj` as a User instance or an object with a `user` FK.
     """
+
     message = "You do not have permission to modify this resource."
 
     def has_object_permission(self, request, view, obj) -> bool:
@@ -18,13 +19,12 @@ class IsOwner(BasePermission):
 
 class IsVerified(BasePermission):
     """Allow access only to email-verified users."""
+
     message = "Please verify your email address to perform this action."
 
     def has_permission(self, request, view) -> bool:
         return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_verified
+            request.user and request.user.is_authenticated and request.user.is_verified
         )
 
 

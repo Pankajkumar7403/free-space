@@ -1,15 +1,16 @@
 # 📁 Location: backend/apps/feed/tests/test_tasks.py
 # ▶  Run:      pytest apps/feed/tests/test_tasks.py -v
 
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from datetime import datetime
+from unittest.mock import patch
 
-from apps.feed.tasks import push_to_feeds_task, warm_user_feed_task, fanout_post_task
-from apps.users.tests.factories import UserFactory
-from apps.posts.tests.factories import PostFactory
+import pytest
+
+from apps.feed.tasks import fanout_post_task, push_to_feeds_task, warm_user_feed_task
 from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
 from apps.users.models import Follow
+from apps.users.tests.factories import UserFactory
 from core.redis.client import get_redis_client, reset_client
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
@@ -32,6 +33,7 @@ class TestPushToFeedsTask:
             score=0.85,
         )
         from apps.feed.cache import feed_exists
+
         assert feed_exists("user:1")
         assert feed_exists("user:2")
         assert feed_exists("user:3")
@@ -44,17 +46,19 @@ class TestWarmUserFeedTask:
     def test_warm_feeds_user_with_no_follows(self, db, user):
         warm_user_feed_task(user_id=str(user.pk))
         from apps.feed.cache import is_feed_warm
+
         assert is_feed_warm(str(user.pk))
 
     def test_warm_feed_skipped_if_already_warm(self, db, user):
         from apps.feed.cache import mark_feed_warm
+
         mark_feed_warm(str(user.pk))
         # Feed is already warm — task returns early before touching Post
         warm_user_feed_task(user_id=str(user.pk))
         # Verify feed was marked warm previously and nothing crashed
 
     def test_warm_feed_pushes_followed_posts(self, db):
-        author   = UserFactory(public=True)
+        author = UserFactory(public=True)
         follower = UserFactory()
         Follow.objects.create(follower=follower, following=author, status="accepted")
         post = PostFactory(author=author, visibility=PostVisibility.PUBLIC)
@@ -62,6 +66,7 @@ class TestWarmUserFeedTask:
         warm_user_feed_task(user_id=str(follower.pk))
 
         from apps.feed.cache import feed_exists, feed_get_page
+
         assert feed_exists(str(follower.pk))
         page = feed_get_page(str(follower.pk), cursor=0, page_size=20)
         assert str(post.pk) in page

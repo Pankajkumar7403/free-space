@@ -16,10 +16,10 @@ These use a concrete proxy model (TestItem) so we don't need
 a real app migration — Django creates it in the test DB via
 @pytest.mark.django_db(databases=["default"]).
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
 
 import pytest
 from django.db import models
@@ -27,22 +27,35 @@ from django.utils import timezone
 
 from core.database.base_model import BaseModel
 
-
 # ── Concrete test model ───────────────────────────────────────────────────────
 # We define a minimal model inline.
 # In tests that use @pytest.mark.django_db, Django's test runner will
 # create this table automatically when we use --create-db.
 # We register it via the apps registry inside the test module.
 
+
 class Article(BaseModel):
     """Minimal concrete model used only in this test module."""
+
     title = models.CharField(max_length=255, default="untitled")
 
     class Meta:
-        app_label = "common"   # must match an INSTALLED_APPS entry
+        app_label = "core"  # must match an INSTALLED_APPS entry
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _ensure_article_table(django_db_setup, django_db_blocker) -> None:
+    from django.db import connection
+
+    with django_db_blocker.unblock():
+        existing = set(connection.introspection.table_names())
+        if Article._meta.db_table not in existing:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.create_model(Article)
+
 
 @pytest.fixture
 def article(db) -> Article:
@@ -72,7 +85,7 @@ class TestUUIDPrimaryKey:
 
     def test_pk_is_auto_assigned(self, db):
         a = Article(title="no pk set")
-        assert a.id is not None   # default=uuid.uuid4 fires before save
+        assert a.id is not None  # default=uuid.uuid4 fires before save
 
 
 class TestTimestamps:

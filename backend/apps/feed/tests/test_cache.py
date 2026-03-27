@@ -2,14 +2,22 @@
 # ▶  Run:      pytest apps/feed/tests/test_cache.py -v
 
 import pytest
-from core.redis.client import get_redis_client, reset_client
+
 from apps.feed.cache import (
-    feed_push_post, feed_get_page, feed_exists, feed_size,
-    feed_remove_post, feed_delete, feed_push_batch,
-    mark_feed_warm, is_feed_warm,
-    explore_push, explore_get_page,
+    explore_get_page,
+    explore_push,
+    feed_delete,
+    feed_exists,
+    feed_get_page,
+    feed_push_batch,
+    feed_push_post,
+    feed_remove_post,
+    feed_size,
+    is_feed_warm,
+    mark_feed_warm,
 )
 from apps.feed.constants import FEED_MAX_SIZE
+from core.redis.client import get_redis_client, reset_client
 
 pytestmark = pytest.mark.unit
 
@@ -30,8 +38,8 @@ class TestFeedPushGet:
         assert "post:100" in result
 
     def test_higher_score_returned_first(self):
-        feed_push_post("user:1", "post:old",  score=0.3)
-        feed_push_post("user:1", "post:new",  score=0.9)
+        feed_push_post("user:1", "post:old", score=0.3)
+        feed_push_post("user:1", "post:new", score=0.9)
         result = feed_get_page("user:1", cursor=0, page_size=10)
         assert result[0] == "post:new"
         assert result[1] == "post:old"
@@ -101,7 +109,7 @@ class TestExploreFeed:
         assert "post:trending" in result
 
     def test_explore_returns_highest_score_first(self):
-        explore_push("post:low",  score=0.1)
+        explore_push("post:low", score=0.1)
         explore_push("post:high", score=0.9)
         result = explore_get_page(cursor=0, page_size=10)
         assert result[0] == "post:high"

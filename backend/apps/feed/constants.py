@@ -5,9 +5,10 @@ from django.db import models
 
 class FeedSource(models.TextChoices):
     """Where a feed item came from."""
-    FOLLOW    = "follow",    "Followed user's post"
-    HASHTAG   = "hashtag",   "Subscribed hashtag"
-    EXPLORE   = "explore",   "Explore / recommended"
+
+    FOLLOW = "follow", "Followed user's post"
+    HASHTAG = "hashtag", "Subscribed hashtag"
+    EXPLORE = "explore", "Explore / recommended"
 
 
 # ── Feed engine constants ─────────────────────────────────────────────────────
@@ -26,6 +27,6 @@ FEED_TTL_SECONDS = 60 * 60 * 24 * 7
 FANOUT_BATCH_SIZE = 100
 
 # Ranking weights
-WEIGHT_RECENCY       = 0.6   # 60% recency
-WEIGHT_ENGAGEMENT    = 0.3   # 30% engagement (likes + comments)
-WEIGHT_RELATIONSHIP  = 0.1   # 10% relationship strength (mutual follow)
+WEIGHT_RECENCY = 0.6  # 60% recency
+WEIGHT_ENGAGEMENT = 0.3  # 30% engagement (likes + comments)
+WEIGHT_RELATIONSHIP = 0.1  # 10% relationship strength (mutual follow)

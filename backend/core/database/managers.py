@@ -3,6 +3,7 @@ core/database/managers.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Custom managers that work with our soft-delete pattern.
 """
+
 from __future__ import annotations
 
 from django.db import models
@@ -20,15 +21,16 @@ class SoftDeleteQuerySet(models.QuerySet):
 
     def soft_delete(self) -> int:
         from django.utils import timezone
+
         return self.update(is_deleted=True, deleted_at=timezone.now())
 
     def restore(self) -> int:
         return self.update(is_deleted=False, deleted_at=None)
 
-    def alive(self) -> "SoftDeleteQuerySet":
+    def alive(self) -> SoftDeleteQuerySet:
         return self.filter(is_deleted=False)
 
-    def deleted(self) -> "SoftDeleteQuerySet":
+    def deleted(self) -> SoftDeleteQuerySet:
         return self.filter(is_deleted=True)
 
 

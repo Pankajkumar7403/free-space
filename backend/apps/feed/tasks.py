@@ -3,15 +3,21 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 
 from celery import shared_task
 
-from apps.feed.cache import feed_push_post, feed_push_batch, is_feed_warm, mark_feed_warm
-from apps.feed.ranking import compute_score
-from apps.posts.models import Post
-from apps.posts.constants import PostStatus, PostVisibility
-from apps.users.models import Follow
+from apps.feed.cache import (
+    feed_push_batch,
+    feed_push_post,
+    is_feed_warm,
+    mark_feed_warm,
+)
 from apps.feed.fanout import fanout_post_to_followers
+from apps.feed.ranking import compute_score
+from apps.posts.constants import PostStatus, PostVisibility
+from apps.posts.models import Post
+from apps.users.models import Follow
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +47,15 @@ def push_to_feeds_task(
         except Exception as exc:
             logger.exception(
                 "push_to_feeds_task: failed for user=%s post=%s",
-                user_id, post_id,
+                user_id,
+                post_id,
             )
             raise self.retry(exc=exc)
 
     logger.debug(
         "push_to_feeds_task: pushed post=%s to %d feeds",
-        post_id, len(user_ids),
+        post_id,
+        len(user_ids),
     )
 
 
@@ -92,7 +100,8 @@ def warm_user_feed_task(self, *, user_id: str) -> None:
     mark_feed_warm(user_id)
     logger.info(
         "warm_user_feed_task: warmed feed for user=%s with %d posts",
-        user_id, len(post_scores),
+        user_id,
+        len(post_scores),
     )
 
 
@@ -109,11 +118,11 @@ def fanout_post_task(
     Parses the created_at string and delegates to fanout_post_to_followers().
     Called from the Kafka consumer.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     created_at = datetime.fromisoformat(post_created_at)
     if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=timezone.utc)
+        created_at = created_at.replace(tzinfo=UTC)
 
     fanout_post_to_followers(
         post_id=post_id,

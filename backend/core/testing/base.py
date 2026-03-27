@@ -7,6 +7,7 @@ all tests automatically get:
   - A pre-authenticated API client
   - Helper assertions for our error envelope shape
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -31,7 +32,9 @@ class BaseTestCase(TestCase):
         try:
             return callable_(*args, **kwargs)
         except Exception as exc:  # noqa: BLE001
-            raise AssertionError(f"Expected no exception, but got {type(exc).__name__}: {exc}") from exc
+            raise AssertionError(
+                f"Expected no exception, but got {type(exc).__name__}: {exc}"
+            ) from exc
 
 
 class BaseAPITestCase(APITestCase):
@@ -62,10 +65,16 @@ class BaseAPITestCase(APITestCase):
     # ── Response assertions ───────────────────────────────────────────────────
 
     def assert_status(self, response: Any, expected: int) -> None:
+        body = getattr(response, "data", None)
+        if body is None:
+            try:
+                body = response.content.decode("utf-8")
+            except Exception:
+                body = "<no body>"
         self.assertEqual(
             response.status_code,
             expected,
-            msg=f"Expected HTTP {expected}, got {response.status_code}. Body: {response.data}",
+            msg=f"Expected HTTP {expected}, got {response.status_code}. Body: {body}",
         )
 
     def assert_ok(self, response: Any) -> None:

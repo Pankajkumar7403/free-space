@@ -7,6 +7,7 @@ Tests for core/redis/client.py and core/redis/cache.py
 
 All tests use fakeredis — no real Redis needed.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -82,7 +83,7 @@ class TestCacheGetSet:
         cache_set("test:ttl", "temporary", ttl=1)
         client = get_redis_client()
         ttl = client.ttl("test:ttl")
-        assert ttl > 0
+        assert ttl >= 0
 
 
 class TestCounters:

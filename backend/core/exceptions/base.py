@@ -8,6 +8,7 @@ Usage:
     raise UserNotFoundError(user_id=42)
     raise ValidationError("Email already in use.", code="EMAIL_TAKEN")
 """
+
 from __future__ import annotations
 
 from rest_framework import status
@@ -46,10 +47,13 @@ class AppException(Exception):
         super().__init__(self.message)
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"{self.__class__.__name__}(code={self.code!r}, message={self.message!r})"
+        return (
+            f"{self.__class__.__name__}(code={self.code!r}, message={self.message!r})"
+        )
 
 
 # ── 4xx Client errors ─────────────────────────────────────────────────────────
+
 
 class BadRequestError(AppException):
     status_code = status.HTTP_400_BAD_REQUEST
@@ -59,6 +63,7 @@ class BadRequestError(AppException):
 
 class ValidationError(AppException):
     """Use for *domain* validation failures; use DRF's for serialiser errors."""
+
     status_code = status.HTTP_400_BAD_REQUEST
     code = "VALIDATION_ERROR"
     message = "Validation failed."
@@ -95,6 +100,7 @@ class RateLimitError(AppException):
 
 
 # ── 5xx Server errors ─────────────────────────────────────────────────────────
+
 
 class ServiceUnavailableError(AppException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE

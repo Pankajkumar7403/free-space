@@ -2,17 +2,29 @@
 # ▶  Run:      pytest apps/users/tests/test_services.py -v
 
 import pytest
+
 from apps.users.exceptions import (
-    AccountInactiveError, AlreadyBlockedError, AlreadyFollowingError,
-    CannotFollowSelfError, EmailAlreadyExistsError, InvalidCredentialsError,
-    NotFollowingError, UsernameAlreadyExistsError, UserNotFoundError,
+    AccountInactiveError,
+    AlreadyBlockedError,
+    AlreadyFollowingError,
+    CannotFollowSelfError,
+    EmailAlreadyExistsError,
+    InvalidCredentialsError,
+    NotFollowingError,
+    UsernameAlreadyExistsError,
+    UserNotFoundError,
 )
 from apps.users.models import BlockedUser, Follow
 from apps.users.services import (
-    CreateUserInput, UpdateProfileInput,
-    authenticate_user, block_user, create_user,
-    deactivate_user, follow_user, unblock_user,
-    unfollow_user, update_profile,
+    CreateUserInput,
+    UpdateProfileInput,
+    authenticate_user,
+    block_user,
+    create_user,
+    follow_user,
+    unblock_user,
+    unfollow_user,
+    update_profile,
 )
 from apps.users.tests.factories import UserFactory
 
@@ -21,36 +33,56 @@ pytestmark = [pytest.mark.unit, pytest.mark.django_db]
 
 class TestCreateUser:
     def test_creates_user(self, db):
-        user = create_user(CreateUserInput(
-            email="new@example.com", username="newuser", password="pass1234"
-        ))
+        user = create_user(
+            CreateUserInput(
+                email="new@example.com", username="newuser", password="pass1234"
+            )
+        )
         assert user.pk is not None
         assert user.email == "new@example.com"
 
     def test_password_is_hashed(self, db):
-        user = create_user(CreateUserInput(
-            email="hash@example.com", username="hashuser", password="pass1234"
-        ))
+        user = create_user(
+            CreateUserInput(
+                email="hash@example.com", username="hashuser", password="pass1234"
+            )
+        )
         assert user.check_password("pass1234")
         assert user.password != "pass1234"
 
     def test_raises_on_duplicate_email(self, db):
         UserFactory(email="taken@example.com")
         with pytest.raises(EmailAlreadyExistsError):
-            create_user(CreateUserInput(email="taken@example.com", username="other", password="pass1234"))
+            create_user(
+                CreateUserInput(
+                    email="taken@example.com", username="other", password="pass1234"
+                )
+            )
 
     def test_raises_on_duplicate_username(self, db):
         UserFactory(username="taken")
         with pytest.raises(UsernameAlreadyExistsError):
-            create_user(CreateUserInput(email="other@example.com", username="taken", password="pass1234"))
+            create_user(
+                CreateUserInput(
+                    email="other@example.com", username="taken", password="pass1234"
+                )
+            )
 
     def test_email_check_case_insensitive(self, db):
         UserFactory(email="case@example.com")
         with pytest.raises(EmailAlreadyExistsError):
-            create_user(CreateUserInput(email="CASE@EXAMPLE.COM", username="other2", password="pass1234"))
+            create_user(
+                CreateUserInput(
+                    email="CASE@EXAMPLE.COM", username="other2", password="pass1234"
+                )
+            )
 
     def test_default_privacy_is_followers_only(self, db):
-        user = create_user(CreateUserInput(email="priv@example.com", username="privuser", password="pass1234"))
+        user = create_user(
+            CreateUserInput(
+                email="priv@example.com", username="privuser", password="pass1234"
+            )
+        )
         assert user.account_privacy == "followers_only"
 
 
@@ -82,24 +114,32 @@ class TestAuthenticateUser:
 
 class TestUpdateProfile:
     def test_updates_username(self, user):
-        updated = update_profile(user_id=user.pk, data=UpdateProfileInput(username="newhandle"))
+        updated = update_profile(
+            user_id=user.pk, data=UpdateProfileInput(username="newhandle")
+        )
         assert updated.username == "newhandle"
 
     def test_raises_on_username_conflict(self, user, db):
-        other = UserFactory(username="occupied")
+        UserFactory(username="occupied")
         with pytest.raises(UsernameAlreadyExistsError):
-            update_profile(user_id=user.pk, data=UpdateProfileInput(username="occupied"))
+            update_profile(
+                user_id=user.pk, data=UpdateProfileInput(username="occupied")
+            )
 
     def test_updates_identity_fields(self, user):
-        updated = update_profile(user_id=user.pk, data=UpdateProfileInput(
-            pronouns="they/them",
-            pronouns_visibility="public",
-        ))
+        updated = update_profile(
+            user_id=user.pk,
+            data=UpdateProfileInput(
+                pronouns="they/them",
+                pronouns_visibility="public",
+            ),
+        )
         assert updated.pronouns == "they/them"
         assert updated.pronouns_visibility == "public"
 
     def test_raises_for_nonexistent_user(self, db):
         import uuid
+
         with pytest.raises(UserNotFoundError):
             update_profile(user_id=uuid.uuid4(), data=UpdateProfileInput(bio="ghost"))
 

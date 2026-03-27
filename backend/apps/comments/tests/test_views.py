@@ -1,13 +1,15 @@
 # 📁 Location: backend/apps/comments/tests/test_views.py
 # ▶  Run:      pytest apps/comments/tests/test_views.py -v
 
-import pytest
 from unittest.mock import patch
-from core.redis.client import get_redis_client, reset_client
+
+import pytest
+
 from apps.comments.tests.factories import CommentFactory
-from apps.posts.tests.factories import PostFactory
 from apps.posts.constants import PostVisibility
+from apps.posts.tests.factories import PostFactory
 from apps.users.tests.factories import UserFactory
+from core.redis.client import get_redis_client, reset_client
 from core.testing.base import BaseAPITestCase
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db]
@@ -25,9 +27,9 @@ def clean_redis():
 class TestCommentListCreateView(BaseAPITestCase):
     def setUp(self):
         super().setUp()
-        self.user  = UserFactory()
+        self.user = UserFactory()
         self.other = UserFactory()
-        self.post  = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
+        self.post = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
         self.authenticate(self.user)
         self.url = f"/api/v1/posts/{self.post.pk}/comments/"
 
@@ -46,9 +48,9 @@ class TestCommentListCreateView(BaseAPITestCase):
     @patch("apps.comments.services.emit_comment_created")
     def test_create_reply(self, mock_emit):
         comment = CommentFactory(post=self.post, author=self.user)
-        res = self.client.post(self.url, {
-            "content": "I agree!", "parent_id": str(comment.pk)
-        })
+        res = self.client.post(
+            self.url, {"content": "I agree!", "parent_id": str(comment.pk)}
+        )
         self.assert_created(res)
         assert res.data["depth"] == 1
 
@@ -65,9 +67,9 @@ class TestCommentListCreateView(BaseAPITestCase):
 class TestCommentDetailView(BaseAPITestCase):
     def setUp(self):
         super().setUp()
-        self.user    = UserFactory()
-        self.other   = UserFactory()
-        self.post    = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
+        self.user = UserFactory()
+        self.other = UserFactory()
+        self.post = PostFactory(author=self.other, visibility=PostVisibility.PUBLIC)
         self.comment = CommentFactory(post=self.post, author=self.user)
         self.authenticate(self.user)
         self.url = f"/api/v1/posts/comments/{self.comment.pk}/"
@@ -101,10 +103,10 @@ class TestCommentDetailView(BaseAPITestCase):
 class TestCommentModerationViews(BaseAPITestCase):
     def setUp(self):
         super().setUp()
-        self.owner    = UserFactory()
+        self.owner = UserFactory()
         self.commenter = UserFactory()
-        self.post     = PostFactory(author=self.owner, visibility=PostVisibility.PUBLIC)
-        self.comment  = CommentFactory(post=self.post, author=self.commenter)
+        self.post = PostFactory(author=self.owner, visibility=PostVisibility.PUBLIC)
+        self.comment = CommentFactory(post=self.post, author=self.commenter)
         self.authenticate(self.owner)
 
     def test_post_owner_can_pin_comment(self):

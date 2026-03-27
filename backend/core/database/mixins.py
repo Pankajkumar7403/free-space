@@ -5,6 +5,7 @@ Lightweight model mixins for cross-cutting concerns.
 These are separate from BaseModel so they can be composed individually
 when a model doesn't need the full BaseModel (e.g. through-tables).
 """
+
 from __future__ import annotations
 
 from django.db import models, transaction

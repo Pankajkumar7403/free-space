@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-
 from django.db import models
 
 from apps.users.models import User
@@ -33,17 +31,17 @@ class Comment(BaseModel):
     is_flagged    → auto-flagged by keyword filter, pending moderation review
     """
 
-    post    = models.ForeignKey(
+    post = models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,
         related_name="comments",
     )
-    author  = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="comments",
     )
-    parent  = models.ForeignKey(
+    parent = models.ForeignKey(
         "self",
         null=True,
         blank=True,
@@ -51,8 +49,8 @@ class Comment(BaseModel):
         related_name="replies",
         help_text="Null for top-level comments; set for replies.",
     )
-    content   = models.TextField(max_length=1000)
-    depth     = models.PositiveSmallIntegerField(
+    content = models.TextField(max_length=1000)
+    depth = models.PositiveSmallIntegerField(
         default=0,
         help_text="0 = top-level, 1 = reply, 2 = reply-to-reply. Max 2.",
     )
@@ -63,7 +61,7 @@ class Comment(BaseModel):
     class Meta:
         db_table = "comments_comment"
         ordering = ["created_at"]
-        indexes  = [
+        indexes = [
             models.Index(fields=["post", "parent", "is_deleted"]),
             models.Index(fields=["post", "is_pinned", "created_at"]),
         ]
@@ -84,6 +82,9 @@ class Comment(BaseModel):
 
 # Auto-flagging keyword list (expanded in M7 with ML classifier)
 FLAGGED_KEYWORDS = [
-    "faggot", "tranny", "dyke", "homo",
-    "queer" ,  # context-dependent — flagged for human review, not auto-removed
+    "faggot",
+    "tranny",
+    "dyke",
+    "homo",
+    "queer",  # context-dependent — flagged for human review, not auto-removed
 ]

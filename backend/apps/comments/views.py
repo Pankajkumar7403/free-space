@@ -36,14 +36,15 @@ class PostCommentListCreateView(APIView):
     GET  /api/v1/posts/<post_id>/comments/   → paginated top-level comments
     POST /api/v1/posts/<post_id>/comments/   → create a comment or reply
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, post_id) -> Response:
-        qs       = get_top_level_comments(post_id=post_id)
-        total    = get_comment_count(post_id=post_id)
+        qs = get_top_level_comments(post_id=post_id)
+        total = get_comment_count(post_id=post_id)
         paginator = CursorPagination()
-        page     = paginator.paginate_queryset(qs, request)
-        data     = CommentSerializer(page, many=True).data
+        page = paginator.paginate_queryset(qs, request)
+        data = CommentSerializer(page, many=True).data
         response = paginator.get_paginated_response(data)
         response.data["total"] = total
         return response
@@ -53,17 +54,20 @@ class PostCommentListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         d = serializer.validated_data
 
-        comment = create_comment(CreateCommentInput(
-            post_id=post_id,
-            author_id=request.user.pk,
-            content=d["content"],
-            parent_id=d.get("parent_id"),
-        ))
+        comment = create_comment(
+            CreateCommentInput(
+                post_id=post_id,
+                author_id=request.user.pk,
+                content=d["content"],
+                parent_id=d.get("parent_id"),
+            )
+        )
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
 
 class CommentDetailView(APIView):
     """GET / PATCH / DELETE /api/v1/comments/<comment_id>/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, comment_id) -> Response:
@@ -87,17 +91,19 @@ class CommentDetailView(APIView):
 
 class CommentRepliesView(APIView):
     """GET /api/v1/comments/<comment_id>/replies/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, comment_id) -> Response:
-        qs        = get_replies(parent_id=comment_id)
+        qs = get_replies(parent_id=comment_id)
         paginator = CursorPagination()
-        page      = paginator.paginate_queryset(qs, request)
+        page = paginator.paginate_queryset(qs, request)
         return paginator.get_paginated_response(CommentSerializer(page, many=True).data)
 
 
 class CommentPinView(APIView):
     """POST /api/v1/comments/<comment_id>/pin/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, comment_id) -> Response:
@@ -110,6 +116,7 @@ class CommentPinView(APIView):
 
 class CommentHideView(APIView):
     """POST /api/v1/comments/<comment_id>/hide/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, comment_id) -> Response:
@@ -122,6 +129,7 @@ class CommentHideView(APIView):
 
 class CommentReportView(APIView):
     """POST /api/v1/comments/<comment_id>/report/"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, comment_id) -> Response:
@@ -135,18 +143,23 @@ class CommentReportView(APIView):
 
 class CommentLikeView(APIView):
     """POST/DELETE/GET /api/v1/comments/<comment_id>/like/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, comment_id) -> Response:
         from apps.likes.services import get_like_count, is_liked_by
+
         comment = get_comment_by_id(comment_id)
-        return Response({
-            "count":       get_like_count(obj=comment),
-            "liked_by_me": is_liked_by(user=request.user, obj=comment),
-        })
+        return Response(
+            {
+                "count": get_like_count(obj=comment),
+                "liked_by_me": is_liked_by(user=request.user, obj=comment),
+            }
+        )
 
     def post(self, request: Request, comment_id) -> Response:
         from apps.likes.services import get_like_count, like_object
+
         comment = get_comment_by_id(comment_id)
         like_object(user=request.user, obj=comment)
         return Response(
@@ -156,6 +169,7 @@ class CommentLikeView(APIView):
 
     def delete(self, request: Request, comment_id) -> Response:
         from apps.likes.services import get_like_count, unlike_object
+
         comment = get_comment_by_id(comment_id)
         unlike_object(user=request.user, obj=comment)
         return Response({"count": get_like_count(obj=comment), "liked_by_me": False})
