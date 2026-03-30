@@ -7,8 +7,8 @@ Imported by config/asgi.py ProtocolTypeRouter.
 
 from django.urls import re_path
 
-from apps.notifications.consumers import NotificationConsumer
 from apps.messaging.consumers import MessageConsumer
+from apps.notifications.consumers import NotificationConsumer
 
 websocket_urlpatterns = [
     # ws://api.qommunity.app/ws/notifications/?token=<jwt>

@@ -22,9 +22,9 @@ MessageReaction
 from django.db import models
 
 from apps.messaging.constants import (
-    ConversationType,
     MAX_GROUP_NAME_LENGTH,
     MAX_MESSAGE_LENGTH,
+    ConversationType,
     MessageType,
     ParticipantRole,
 )

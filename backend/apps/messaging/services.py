@@ -351,8 +351,8 @@ def _dispatch_reaction_event(conversation_id, message_id, user_id, emoji, event_
 
 def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
     try:
-        from core.redis.client import RedisClient
         from apps.messaging.constants import UNREAD_CACHE_KEY
+        from core.redis.client import RedisClient
 
         RedisClient.get_instance().delete(UNREAD_CACHE_KEY.format(user_id=user_id))
     except Exception:

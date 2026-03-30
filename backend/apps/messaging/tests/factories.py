@@ -1,9 +1,8 @@
 import factory
 
-from core.testing.factories import BaseFactory
-
 from apps.messaging.constants import ConversationType, MessageType, ParticipantRole
 from apps.messaging.models import Conversation, ConversationParticipant, Message, MessageReaction
+from core.testing.factories import BaseFactory
 
 
 class ConversationFactory(BaseFactory):

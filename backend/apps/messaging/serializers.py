@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.messaging.constants import ALLOWED_EMOJI_REACTIONS, MAX_GROUP_NAME_LENGTH, MAX_MESSAGE_LENGTH
+from apps.messaging.constants import (
+    ALLOWED_EMOJI_REACTIONS,
+    MAX_GROUP_NAME_LENGTH,
+    MAX_MESSAGE_LENGTH,
+    PRESENCE_KEY,
+)
 from apps.messaging.models import Conversation, ConversationParticipant, Message
 
 
@@ -93,7 +98,6 @@ class ParticipantSerializer(serializers.ModelSerializer):
     def get_is_online(self, obj) -> bool:
         try:
             from core.redis.client import RedisClient
-            from apps.messaging.constants import PRESENCE_KEY
 
             redis = RedisClient.get_instance()
             return bool(redis.get(PRESENCE_KEY.format(user_id=obj.user_id)))
