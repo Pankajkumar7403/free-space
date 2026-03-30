@@ -1,0 +1,73 @@
+﻿{
+    "expo": {
+      "name": "Qommunity",
+      "slug": "qommunity",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "qommunity",
+      "userInterfaceStyle": "automatic",
+      "splash": {
+        "image": "./assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0d0d14"
+      },
+      "ios": {
+        "supportsTablet": false,
+        "bundleIdentifier": "com.qommunity.app",
+        "buildNumber": "1",
+        "infoPlist": {
+          "NSCameraUsageDescription": "Qommunity uses your camera to let you capture photos and videos for posts.",
+          "NSPhotoLibraryUsageDescription": "Qommunity uses your photo library to let you share images and videos.",
+          "NSMicrophoneUsageDescription": "Qommunity uses your microphone for video recording.",
+          "NSUserNotificationsUsageDescription": "Qommunity sends notifications for new likes, comments, and followers."
+        }
+      },
+      "android": {
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/images/adaptive-icon.png",
+          "backgroundColor": "#0d0d14"
+        },
+        "package": "com.qommunity.app",
+        "versionCode": 1,
+        "permissions": [
+          "CAMERA",
+          "READ_EXTERNAL_STORAGE",
+          "WRITE_EXTERNAL_STORAGE",
+          "RECEIVE_BOOT_COMPLETED",
+          "VIBRATE"
+        ]
+      },
+      "web": {
+        "bundler": "metro",
+        "output": "static",
+        "favicon": "./assets/images/favicon.png"
+      },
+      "plugins": [
+        "expo-router",
+        "expo-secure-store",
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/images/notification-icon.png",
+            "color": "#7C3AED",
+            "sounds": []
+          }
+        ],
+        [
+          "expo-image-picker",
+          {
+            "photosPermission": "Qommunity uses your photo library to let you share images."
+          }
+        ]
+      ],
+      "experiments": {
+        "typedRoutes": true
+      },
+      "extra": {
+        "eas": {
+          "projectId": "YOUR_EAS_PROJECT_ID"
+        }
+      }
+    }
+  }

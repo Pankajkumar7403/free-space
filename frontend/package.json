@@ -1,0 +1,39 @@
+{
+    "name": "qommunity-frontend",
+    "version": "0.0.1",
+    "private": true,
+    "description": "Qommunity LGBTQ+ Social Media Platform - Frontend Monorepo",
+    "scripts": {
+      "build": "turbo build",
+      "dev": "turbo dev",
+      "dev:web": "turbo dev --filter=web",
+      "dev:mobile": "turbo dev --filter=mobile",
+      "lint": "turbo lint",
+      "lint:fix": "turbo lint -- --fix",
+      "type-check": "turbo type-check",
+      "test": "turbo test",
+      "test:watch": "turbo test:watch",
+      "test:coverage": "turbo test -- --coverage",
+      "clean": "turbo clean && rm -rf node_modules",
+      "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+      "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+      "prepare": "cd ../.. && husky frontend/.husky || true"
+    },
+    "devDependencies": {
+      "turbo": "^2.0.0",
+      "prettier": "^3.3.0",
+      "husky": "^9.0.11",
+      "lint-staged": "^15.2.7",
+      "@commitlint/cli": "^19.3.0",
+      "@commitlint/config-conventional": "^19.2.2"
+    },
+    "lint-staged": {
+      "**/*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+      "**/*.{js,jsx,json,css,md}": ["prettier --write"]
+    },
+    "engines": {
+      "node": ">=20.0.0",
+      "pnpm": ">=9.0.0"
+    },
+    "packageManager": "pnpm@9.4.0"
+  }

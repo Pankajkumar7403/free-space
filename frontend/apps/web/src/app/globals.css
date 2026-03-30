@@ -1,0 +1,181 @@
+/* 📍 LOCATION: free-space/frontend/apps/web/src/app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design token CSS variables ─────────────────────────────────────────────
+   Light and dark mode values for semantic colour tokens.
+   Components consume var(--primary) etc. — never hardcoded hex.
+────────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Backgrounds */
+    --background:  0 0% 100%;
+    --foreground:  224 71% 4%;
+
+    /* Card / surface */
+    --card:        0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    /* Popover */
+    --popover:     0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    /* Brand violet as primary */
+    --primary:     262 83% 57%;      /* #7C3AED */
+    --primary-foreground: 0 0% 100%;
+
+    /* Indigo as secondary */
+    --secondary:   243 75% 59%;      /* #4F46E5 */
+    --secondary-foreground: 0 0% 100%;
+
+    /* Pride pink accent */
+    --accent:      330 81% 60%;      /* #EC4899 */
+    --accent-foreground: 0 0% 100%;
+
+    /* Muted surfaces */
+    --muted:       220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border & input */
+    --border:      220 13% 91%;
+    --input:       220 13% 91%;
+    --ring:        262 83% 57%;
+
+    /* Border radius scale */
+    --radius:      0.625rem;          /* 10px */
+  }
+
+  .dark {
+    --background:  224 71% 4%;
+    --foreground:  213 31% 91%;
+
+    --card:        224 71% 7%;
+    --card-foreground: 213 31% 91%;
+
+    --popover:     224 71% 7%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary:     262 83% 68%;
+    --primary-foreground: 224 71% 4%;
+
+    --secondary:   243 75% 68%;
+    --secondary-foreground: 224 71% 4%;
+
+    --accent:      330 81% 65%;
+    --accent-foreground: 224 71% 4%;
+
+    --muted:       223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 213 31% 91%;
+
+    --border:      216 34% 17%;
+    --input:       216 34% 17%;
+    --ring:        262 83% 68%;
+  }
+}
+
+/* ─── Base resets ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Smooth font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Prevent scroll-jump on modal open */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+  }
+
+  /* Focus-visible outline — accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Remove default list styles */
+  ul, ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Responsive images */
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ─── Component layer utilities ────────────────────────────────────────────── */
+@layer components {
+  /* Feed container — max width centred */
+  .feed-container {
+    @apply max-w-[470px] mx-auto px-0 sm:px-4;
+  }
+
+  /* Standard page layout with sidebar */
+  .page-layout {
+    @apply grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[240px_1fr_320px] gap-8 max-w-[975px] mx-auto px-4;
+  }
+
+  /* Scrollable area that hides scrollbar but allows scroll */
+  .scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Pride gradient — used on profile ring, badges */
+  .pride-gradient {
+    background: linear-gradient(
+      135deg,
+      #E40303 0%,
+      #FF8C00 17%,
+      #FFED00 33%,
+      #008026 50%,
+      #004DFF 67%,
+      #750787 83%,
+      #E40303 100%
+    );
+  }
+
+  /* Glass morphism card — used in modals, overlays */
+  .glass-card {
+    @apply bg-background/80 backdrop-blur-xl border border-border/50 shadow-xl;
+  }
+}
+
+/* ─── Animation utilities ───────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  /* Stagger children fade-in */
+  .stagger-children > * {
+    animation: fade-in 0.3s ease-out both;
+  }
+  .stagger-children > *:nth-child(1)  { animation-delay: 0ms;  }
+  .stagger-children > *:nth-child(2)  { animation-delay: 50ms; }
+  .stagger-children > *:nth-child(3)  { animation-delay: 100ms;}
+  .stagger-children > *:nth-child(4)  { animation-delay: 150ms;}
+  .stagger-children > *:nth-child(5)  { animation-delay: 200ms;}
+}
