@@ -13,7 +13,9 @@ from apps.messaging.models import Conversation, ConversationParticipant, Message
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_id = serializers.UUIDField(allow_null=True, read_only=True)
-    sender_username = serializers.CharField(source="sender.username", read_only=True, allow_null=True)
+    sender_username = serializers.CharField(
+        source="sender.username", read_only=True, allow_null=True
+    )
     sender_avatar = serializers.SerializerMethodField()
     display_content = serializers.SerializerMethodField()
     reply_to_id = serializers.UUIDField(allow_null=True, read_only=True)
@@ -142,7 +144,11 @@ class ConversationSerializer(serializers.ModelSerializer):
             return None
 
         other = next(
-            (p for p in obj.participants.all() if str(p.user_id) != str(request.user.id)),
+            (
+                p
+                for p in obj.participants.all()
+                if str(p.user_id) != str(request.user.id)
+            ),
             None,
         )
         if not other:
@@ -175,7 +181,9 @@ class CreateGroupConversationSerializer(serializers.Serializer):
 
 
 class SendMessageSerializer(serializers.Serializer):
-    content = serializers.CharField(max_length=MAX_MESSAGE_LENGTH, required=False, allow_blank=True)
+    content = serializers.CharField(
+        max_length=MAX_MESSAGE_LENGTH, required=False, allow_blank=True
+    )
     media_id = serializers.UUIDField(required=False, allow_null=True)
     reply_to_id = serializers.UUIDField(required=False, allow_null=True)
 
@@ -195,4 +203,3 @@ class AddReactionSerializer(serializers.Serializer):
 
 class AddParticipantSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
-

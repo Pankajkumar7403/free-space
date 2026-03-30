@@ -1,4 +1,9 @@
-from core.exceptions.base import ConflictError, NotFoundError, PermissionError, ValidationError
+from core.exceptions.base import (
+    ConflictError,
+    NotFoundError,
+    PermissionError,
+    ValidationError,
+)
 
 
 class ConversationNotFoundError(NotFoundError):
@@ -19,7 +24,9 @@ class MessageNotFoundError(NotFoundError):
     message = "Message not found."
 
     def __init__(self, message_id=None):
-        msg = f"Message {message_id} not found." if message_id else self.__class__.message
+        msg = (
+            f"Message {message_id} not found." if message_id else self.__class__.message
+        )
         super().__init__(msg, code=self.code)
 
 
@@ -68,4 +75,3 @@ class InvalidEmojiError(ValidationError):
 class MessageDeleteForbiddenError(PermissionError):
     code = "MESSAGE_DELETE_FORBIDDEN"
     message = "You can only delete your own messages."
-

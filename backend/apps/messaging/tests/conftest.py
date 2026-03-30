@@ -63,4 +63,3 @@ def group_conversation(db, user_factory):
         name="Test Group 🏳️‍🌈",
     )
     return conv, creator, member1, member2
-

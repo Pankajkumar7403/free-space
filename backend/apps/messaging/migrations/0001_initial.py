@@ -18,7 +18,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Conversation",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -41,7 +49,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("last_message_preview", models.CharField(blank=True, max_length=100)),
-                ("last_message_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "last_message_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "created_by",
                     models.ForeignKey(
@@ -71,7 +82,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Message",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -80,7 +99,11 @@ class Migration(migrations.Migration):
                 (
                     "message_type",
                     models.CharField(
-                        choices=[("text", "Text"), ("media", "Media Attachment"), ("system", "System Event")],
+                        choices=[
+                            ("text", "Text"),
+                            ("media", "Media Attachment"),
+                            ("system", "System Event"),
+                        ],
                         db_index=True,
                         default="text",
                         max_length=10,
@@ -130,19 +153,39 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="message",
-            index=models.Index(fields=["conversation", "-created_at"], name="msg_conv_created_idx"),
+            index=models.Index(
+                fields=["conversation", "-created_at"], name="msg_conv_created_idx"
+            ),
         ),
         migrations.CreateModel(
             name="ConversationParticipant",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
                 ("deleted_at", models.DateTimeField(blank=True, null=True)),
-                ("role", models.CharField(choices=[("admin", "Admin"), ("member", "Member")], default="member", max_length=10)),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[("admin", "Admin"), ("member", "Member")],
+                        default="member",
+                        max_length=10,
+                    ),
+                ),
                 ("joined_at", models.DateTimeField(auto_now_add=True)),
-                ("last_seen_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "last_seen_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 ("is_muted", models.BooleanField(default=False)),
                 ("is_archived", models.BooleanField(default=False)),
                 (
@@ -171,7 +214,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="MessageReaction",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("is_deleted", models.BooleanField(db_index=True, default=False)),
@@ -205,4 +256,3 @@ class Migration(migrations.Migration):
             index=models.Index(fields=["message"], name="reaction_message_idx"),
         ),
     ]
-

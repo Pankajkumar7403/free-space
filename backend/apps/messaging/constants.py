@@ -61,4 +61,3 @@ ALLOWED_EMOJI_REACTIONS = frozenset(
         "🌈",
     }
 )
-

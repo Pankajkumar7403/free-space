@@ -1,7 +1,12 @@
 import factory
 
 from apps.messaging.constants import ConversationType, MessageType, ParticipantRole
-from apps.messaging.models import Conversation, ConversationParticipant, Message, MessageReaction
+from apps.messaging.models import (
+    Conversation,
+    ConversationParticipant,
+    Message,
+    MessageReaction,
+)
 from core.testing.factories import BaseFactory
 
 
@@ -40,4 +45,3 @@ class MessageReactionFactory(BaseFactory):
     message = factory.SubFactory(MessageFactory)
     user = factory.SubFactory("apps.users.tests.factories.UserFactory")
     emoji = "❤️"
-

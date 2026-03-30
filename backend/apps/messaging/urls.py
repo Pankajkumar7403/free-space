@@ -5,7 +5,9 @@ from apps.messaging import views
 app_name = "messaging"
 
 urlpatterns = [
-    path("conversations/", views.ConversationListView.as_view(), name="conversation-list"),
+    path(
+        "conversations/", views.ConversationListView.as_view(), name="conversation-list"
+    ),
     path(
         "conversations/direct/",
         views.DirectConversationView.as_view(),
@@ -31,7 +33,9 @@ urlpatterns = [
         views.ConversationParticipantsView.as_view(),
         name="conversation-participants",
     ),
-    path("<uuid:message_id>/", views.MessageDetailView.as_view(), name="message-detail"),
+    path(
+        "<uuid:message_id>/", views.MessageDetailView.as_view(), name="message-detail"
+    ),
     path(
         "<uuid:message_id>/reactions/",
         views.MessageReactionView.as_view(),
@@ -39,4 +43,3 @@ urlpatterns = [
     ),
     path("unread-count/", views.UnreadCountView.as_view(), name="unread-count"),
 ]
-

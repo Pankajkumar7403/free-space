@@ -7,7 +7,12 @@ from django.db.models import Count, QuerySet
 
 from apps.messaging.constants import UNREAD_CACHE_KEY, UNREAD_CACHE_TTL
 from apps.messaging.exceptions import ConversationNotFoundError, MessageNotFoundError
-from apps.messaging.models import Conversation, ConversationParticipant, Message, MessageReaction
+from apps.messaging.models import (
+    Conversation,
+    ConversationParticipant,
+    Message,
+    MessageReaction,
+)
 
 
 def get_conversation_by_id(conversation_id: uuid.UUID) -> Conversation:
@@ -19,7 +24,9 @@ def get_conversation_by_id(conversation_id: uuid.UUID) -> Conversation:
 
 def get_message_by_id(message_id: uuid.UUID) -> Message:
     try:
-        return Message.objects.select_related("sender", "conversation").get(id=message_id)
+        return Message.objects.select_related("sender", "conversation").get(
+            id=message_id
+        )
     except Message.DoesNotExist:
         raise MessageNotFoundError(message_id)
 
@@ -81,7 +88,9 @@ def get_unread_message_count(user_id: uuid.UUID) -> int:
     return count
 
 
-def get_unread_count_per_conversation(user_id: uuid.UUID, conversation_id: uuid.UUID) -> int:
+def get_unread_count_per_conversation(
+    user_id: uuid.UUID, conversation_id: uuid.UUID
+) -> int:
     try:
         participant = ConversationParticipant.objects.get(
             conversation_id=conversation_id,
@@ -90,7 +99,9 @@ def get_unread_count_per_conversation(user_id: uuid.UUID, conversation_id: uuid.
     except ConversationParticipant.DoesNotExist:
         return 0
 
-    qs = Message.objects.filter(conversation_id=conversation_id).exclude(sender_id=user_id)
+    qs = Message.objects.filter(conversation_id=conversation_id).exclude(
+        sender_id=user_id
+    )
     qs = qs.exclude(message_type="system")
     if participant.last_seen_at:
         qs = qs.filter(created_at__gt=participant.last_seen_at)
@@ -132,4 +143,3 @@ def _compute_unread_count(user_id: uuid.UUID) -> int:
             qs = qs.filter(created_at__gt=p.last_seen_at)
         total += qs.count()
     return total
-

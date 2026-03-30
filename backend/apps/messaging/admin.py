@@ -27,7 +27,14 @@ class ConversationParticipantAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ["id", "sender", "conversation", "message_type", "is_deleted", "created_at"]
+    list_display = [
+        "id",
+        "sender",
+        "conversation",
+        "message_type",
+        "is_deleted",
+        "created_at",
+    ]
     list_filter = ["message_type", "is_deleted"]
     search_fields = ["sender__username", "content"]
     raw_id_fields = ["sender", "conversation", "reply_to", "media"]
@@ -39,4 +46,3 @@ class MessageReactionAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "message", "emoji", "created_at"]
     search_fields = ["user__username", "emoji"]
     raw_id_fields = ["user", "message"]
-

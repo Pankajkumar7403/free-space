@@ -19,7 +19,9 @@ class TestConversationListAPI:
 
 @pytest.mark.django_db
 class TestDirectConversationAPI:
-    def test_create_direct_returns_201(self, api_client, user_factory, jwt_token_factory):
+    def test_create_direct_returns_201(
+        self, api_client, user_factory, jwt_token_factory
+    ):
         user = user_factory()
         other = user_factory()
         token = jwt_token_factory(user)
@@ -35,7 +37,9 @@ class TestDirectConversationAPI:
 
 @pytest.mark.django_db
 class TestMessageListAPI:
-    def test_send_message_returns_201(self, api_client, user_factory, jwt_token_factory):
+    def test_send_message_returns_201(
+        self, api_client, user_factory, jwt_token_factory
+    ):
         user = user_factory()
         other = user_factory()
         token = jwt_token_factory(user)
@@ -70,4 +74,3 @@ class TestMessageListAPI:
             format="json",
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
-

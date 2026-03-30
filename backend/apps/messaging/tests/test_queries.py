@@ -76,4 +76,3 @@ class TestGetMessageReactionsSummary:
         add_reaction(message_id=msg.id, user_id=u2.id, emoji="❤️")
         summary = get_message_reactions_summary(msg.id)
         assert summary["❤️"] == 1
-

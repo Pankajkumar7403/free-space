@@ -199,4 +199,3 @@ class MessageReaction(BaseModel):
 
     def __str__(self) -> str:
         return f"Reaction({self.emoji} by {self.user_id} on {self.message_id})"
-

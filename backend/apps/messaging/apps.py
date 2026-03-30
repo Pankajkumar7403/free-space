@@ -8,4 +8,3 @@ class MessagingConfig(AppConfig):
 
     def ready(self) -> None:
         return
-

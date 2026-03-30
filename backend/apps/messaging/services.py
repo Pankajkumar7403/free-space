@@ -29,7 +29,12 @@ from apps.messaging.exceptions import (
     NotAParticipantError,
     NotConversationAdminError,
 )
-from apps.messaging.models import Conversation, ConversationParticipant, Message, MessageReaction
+from apps.messaging.models import (
+    Conversation,
+    ConversationParticipant,
+    Message,
+    MessageReaction,
+)
 from apps.messaging.selectors import get_conversation_by_id, get_message_by_id
 
 logger = logging.getLogger(__name__)
@@ -101,7 +106,11 @@ def create_group_conversation(
             ConversationParticipant(
                 conversation=conversation,
                 user_id=uid,
-                role=ParticipantRole.ADMIN if uid == creator_id else ParticipantRole.MEMBER,
+                role=(
+                    ParticipantRole.ADMIN
+                    if uid == creator_id
+                    else ParticipantRole.MEMBER
+                ),
             )
             for uid in all_participant_ids
         ]
@@ -188,7 +197,9 @@ def delete_message(*, message_id: uuid.UUID, user_id: uuid.UUID) -> Message:
     return message
 
 
-def edit_message(*, message_id: uuid.UUID, user_id: uuid.UUID, new_content: str) -> Message:
+def edit_message(
+    *, message_id: uuid.UUID, user_id: uuid.UUID, new_content: str
+) -> Message:
     message = get_message_by_id(message_id)
     if str(message.sender_id) != str(user_id):
         raise MessageDeleteForbiddenError()
@@ -227,7 +238,9 @@ def mark_conversation_read(*, conversation_id: uuid.UUID, user_id: uuid.UUID) ->
     return count
 
 
-def add_reaction(*, message_id: uuid.UUID, user_id: uuid.UUID, emoji: str) -> MessageReaction:
+def add_reaction(
+    *, message_id: uuid.UUID, user_id: uuid.UUID, emoji: str
+) -> MessageReaction:
     if emoji not in ALLOWED_EMOJI_REACTIONS:
         raise InvalidEmojiError()
 
@@ -240,7 +253,9 @@ def add_reaction(*, message_id: uuid.UUID, user_id: uuid.UUID, emoji: str) -> Me
         user_id=user_id,
         emoji=emoji,
     )
-    _dispatch_reaction_event(message.conversation_id, message_id, user_id, emoji, "reaction_added")
+    _dispatch_reaction_event(
+        message.conversation_id, message_id, user_id, emoji, "reaction_added"
+    )
     return reaction
 
 
@@ -248,7 +263,9 @@ def remove_reaction(*, message_id: uuid.UUID, user_id: uuid.UUID, emoji: str) ->
     if emoji not in ALLOWED_EMOJI_REACTIONS:
         raise InvalidEmojiError()
 
-    MessageReaction.objects.filter(message_id=message_id, user_id=user_id, emoji=emoji).delete()
+    MessageReaction.objects.filter(
+        message_id=message_id, user_id=user_id, emoji=emoji
+    ).delete()
 
     message = get_message_by_id(message_id)
     _dispatch_reaction_event(
@@ -269,7 +286,9 @@ def add_participant(
     if not _is_admin(conversation_id, added_by_id):
         raise NotConversationAdminError()
 
-    current_count = ConversationParticipant.objects.filter(conversation_id=conversation_id).count()
+    current_count = ConversationParticipant.objects.filter(
+        conversation_id=conversation_id
+    ).count()
     if current_count >= MAX_GROUP_PARTICIPANTS:
         raise MaxParticipantsReachedError()
 
@@ -299,11 +318,15 @@ def remove_participant(
     if not is_self and not is_admin_:
         raise NotConversationAdminError()
 
-    ConversationParticipant.objects.filter(conversation_id=conversation_id, user_id=user_id).delete()
+    ConversationParticipant.objects.filter(
+        conversation_id=conversation_id, user_id=user_id
+    ).delete()
 
 
 def _is_participant(conversation_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-    return ConversationParticipant.objects.filter(conversation_id=conversation_id, user_id=user_id).exists()
+    return ConversationParticipant.objects.filter(
+        conversation_id=conversation_id, user_id=user_id
+    ).exists()
 
 
 def _is_admin(conversation_id: uuid.UUID, user_id: uuid.UUID) -> bool:
@@ -323,7 +346,9 @@ def _send_system_message(conversation: Conversation, text: str) -> Message:
     )
 
 
-def _dispatch_reaction_event(conversation_id, message_id, user_id, emoji, event_type) -> None:
+def _dispatch_reaction_event(
+    conversation_id, message_id, user_id, emoji, event_type
+) -> None:
     try:
         from asgiref.sync import async_to_sync
         from channels.layers import get_channel_layer
@@ -357,4 +382,3 @@ def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
         RedisClient.get_instance().delete(UNREAD_CACHE_KEY.format(user_id=user_id))
     except Exception:
         pass
-

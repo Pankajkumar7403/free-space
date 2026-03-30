@@ -13,7 +13,11 @@ import uuid
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-from apps.messaging.constants import TYPING_KEY, TYPING_TTL_SECONDS, get_conversation_group
+from apps.messaging.constants import (
+    TYPING_KEY,
+    TYPING_TTL_SECONDS,
+    get_conversation_group,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +90,9 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
         reply_to_id = content.get("reply_to_id")
 
         if not text:
-            await self.send_json({"type": "error", "message": "Message content is required."})
+            await self.send_json(
+                {"type": "error", "message": "Message content is required."}
+            )
             return
 
         message = await self._create_message(text, reply_to_id)
@@ -95,7 +101,9 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
 
         payload = await self._build_message_payload(message)
 
-        await self.channel_layer.group_send(self.group_name, {"type": "message_new", "data": payload})
+        await self.channel_layer.group_send(
+            self.group_name, {"type": "message_new", "data": payload}
+        )
         await self._clear_typing()
 
     async def _handle_delete_message(self, content: dict):
@@ -202,11 +210,16 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _delete_message(self, message_id_str: str) -> bool:
-        from apps.messaging.exceptions import MessageDeleteForbiddenError, MessageNotFoundError
+        from apps.messaging.exceptions import (
+            MessageDeleteForbiddenError,
+            MessageNotFoundError,
+        )
         from apps.messaging.services import delete_message
 
         try:
-            delete_message(message_id=uuid.UUID(message_id_str), user_id=uuid.UUID(self.user_id))
+            delete_message(
+                message_id=uuid.UUID(message_id_str), user_id=uuid.UUID(self.user_id)
+            )
             return True
         except (MessageDeleteForbiddenError, MessageNotFoundError, ValueError):
             return False
@@ -235,7 +248,9 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
             from core.redis.client import RedisClient
 
             redis = RedisClient.get_instance()
-            key = TYPING_KEY.format(conversation_id=self.conversation_id, user_id=self.user_id)
+            key = TYPING_KEY.format(
+                conversation_id=self.conversation_id, user_id=self.user_id
+            )
             if is_typing:
                 redis.setex(key, TYPING_TTL_SECONDS, "1")
             else:
@@ -245,4 +260,3 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
 
     async def _clear_typing(self) -> None:
         await self._set_typing(False)
-

@@ -64,7 +64,9 @@ class TestCreateDirectConversation:
         u1 = user_factory()
         u2 = user_factory()
         conv, _ = create_direct_conversation(user1_id=u1.id, user2_id=u2.id)
-        sys_msgs = Message.objects.filter(conversation=conv, message_type=MessageType.SYSTEM)
+        sys_msgs = Message.objects.filter(
+            conversation=conv, message_type=MessageType.SYSTEM
+        )
         assert sys_msgs.exists()
 
     def test_creator_is_admin(self, user_factory):
@@ -92,7 +94,9 @@ class TestCreateGroupConversation:
     def test_creator_is_admin(self, user_factory):
         creator = user_factory()
         m1 = user_factory()
-        conv = create_group_conversation(creator_id=creator.id, participant_ids=[m1.id], name="Test Group")
+        conv = create_group_conversation(
+            creator_id=creator.id, participant_ids=[m1.id], name="Test Group"
+        )
         p = ConversationParticipant.objects.get(conversation=conv, user=creator)
         assert p.role == ParticipantRole.ADMIN
 
@@ -100,14 +104,18 @@ class TestCreateGroupConversation:
         creator = user_factory()
         many_ids = [uuid.uuid4() for _ in range(101)]
         with pytest.raises(MaxParticipantsReachedError):
-            create_group_conversation(creator_id=creator.id, participant_ids=many_ids, name="Too Big")
+            create_group_conversation(
+                creator_id=creator.id, participant_ids=many_ids, name="Too Big"
+            )
 
 
 @pytest.mark.django_db
 class TestSendMessage:
     def test_creates_message(self, direct_conversation):
         conv, u1, _u2 = direct_conversation
-        msg = send_message(conversation_id=conv.id, sender_id=u1.id, content="Hello there! 🌈")
+        msg = send_message(
+            conversation_id=conv.id, sender_id=u1.id, content="Hello there! 🌈"
+        )
         assert msg.content == "Hello there! 🌈"
         assert msg.sender_id == u1.id
 
@@ -180,7 +188,9 @@ class TestReactions:
         msg = send_message(conversation_id=conv.id, sender_id=u1.id, content="Hello")
         add_reaction(message_id=msg.id, user_id=u2.id, emoji="❤️")
         remove_reaction(message_id=msg.id, user_id=u2.id, emoji="❤️")
-        assert not MessageReaction.objects.filter(message=msg, user=u2, emoji="❤️").exists()
+        assert not MessageReaction.objects.filter(
+            message=msg, user=u2, emoji="❤️"
+        ).exists()
 
 
 @pytest.mark.django_db
@@ -188,23 +198,32 @@ class TestGroupManagement:
     def test_add_participant_success(self, group_conversation, user_factory):
         conv, creator, _m1, _m2 = group_conversation
         new_user = user_factory()
-        add_participant(conversation_id=conv.id, user_id=new_user.id, added_by_id=creator.id)
-        assert ConversationParticipant.objects.filter(conversation=conv, user=new_user).exists()
+        add_participant(
+            conversation_id=conv.id, user_id=new_user.id, added_by_id=creator.id
+        )
+        assert ConversationParticipant.objects.filter(
+            conversation=conv, user=new_user
+        ).exists()
 
     def test_non_admin_cannot_add(self, group_conversation, user_factory):
         conv, _creator, m1, _m2 = group_conversation
         new_user = user_factory()
         with pytest.raises(NotConversationAdminError):
-            add_participant(conversation_id=conv.id, user_id=new_user.id, added_by_id=m1.id)
+            add_participant(
+                conversation_id=conv.id, user_id=new_user.id, added_by_id=m1.id
+            )
 
     def test_direct_conversation_raises(self, direct_conversation, user_factory):
         conv, u1, _u2 = direct_conversation
         new_user = user_factory()
         with pytest.raises(GroupConversationRequiredError):
-            add_participant(conversation_id=conv.id, user_id=new_user.id, added_by_id=u1.id)
+            add_participant(
+                conversation_id=conv.id, user_id=new_user.id, added_by_id=u1.id
+            )
 
     def test_remove_self_always_allowed(self, group_conversation):
         conv, _creator, m1, _m2 = group_conversation
         remove_participant(conversation_id=conv.id, user_id=m1.id, removed_by_id=m1.id)
-        assert not ConversationParticipant.objects.filter(conversation=conv, user=m1).exists()
-
+        assert not ConversationParticipant.objects.filter(
+            conversation=conv, user=m1
+        ).exists()

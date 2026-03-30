@@ -96,7 +96,9 @@ class ConversationDetailView(APIView):
 
     def get(self, request, conversation_id: uuid.UUID):
         conversation = self._get_verified_conversation(conversation_id, request.user.id)
-        return Response(ConversationSerializer(conversation, context={"request": request}).data)
+        return Response(
+            ConversationSerializer(conversation, context={"request": request}).data
+        )
 
     def delete(self, request, conversation_id: uuid.UUID):
         self._get_verified_conversation(conversation_id, request.user.id)
@@ -171,7 +173,10 @@ class MessageReactionView(APIView):
             user_id=request.user.id,
             emoji=serializer.validated_data["emoji"],
         )
-        return Response({"emoji": serializer.validated_data["emoji"]}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"emoji": serializer.validated_data["emoji"]},
+            status=status.HTTP_201_CREATED,
+        )
 
     def delete(self, request, message_id: uuid.UUID):
         serializer = AddReactionSerializer(data=request.data)
@@ -188,7 +193,9 @@ class ConversationMarkReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, conversation_id: uuid.UUID):
-        count = mark_conversation_read(conversation_id=conversation_id, user_id=request.user.id)
+        count = mark_conversation_read(
+            conversation_id=conversation_id, user_id=request.user.id
+        )
         return Response({"marked_read": count})
 
 
@@ -263,4 +270,3 @@ def _dispatch_delete_message(message) -> None:
         )
     except Exception as exc:
         logger.warning("messaging.delete_dispatch_failed", extra={"error": str(exc)})
-
