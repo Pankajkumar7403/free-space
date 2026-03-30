@@ -27,6 +27,7 @@ urlpatterns = [
         "api/v1/notifications/",
         include("apps.notifications.urls", namespace="notifications"),
     ),
+    path("api/v1/messages/", include("apps.messaging.urls", namespace="messaging")),
     path("api/v1/gdpr/", include("apps.common.gdpr.urls", namespace="gdpr")),
     # OpenAPI schema + interactive docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

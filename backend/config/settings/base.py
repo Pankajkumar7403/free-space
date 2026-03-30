@@ -53,6 +53,7 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.media",
     "apps.common",
+    "apps.messaging",
 ]
 
 INSTALLED_APPS = ["daphne"] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
