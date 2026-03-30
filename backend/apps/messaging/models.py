@@ -150,6 +150,9 @@ class Message(BaseModel):
         related_name="replies",
     )
 
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         db_table = "messages"
         ordering = ["-created_at"]

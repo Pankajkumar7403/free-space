@@ -147,10 +147,17 @@ class ConversationSerializer(serializers.ModelSerializer):
         )
         if not other:
             return None
+        avatar_url = None
+        avatar_field = getattr(other.user, "avatar", None)
+        if avatar_field:
+            try:
+                avatar_url = avatar_field.url
+            except Exception:
+                avatar_url = None
         return {
             "user_id": str(other.user_id),
             "username": getattr(other.user, "username", ""),
-            "avatar": getattr(getattr(other.user, "avatar", None), "url", None),
+            "avatar": avatar_url,
         }
 
 
