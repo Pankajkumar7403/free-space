@@ -11,7 +11,7 @@ export default defineConfig({
     environment: 'jsdom',
 
     // Run setup file before each test — imports jest-dom matchers
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./src/tests/setup.ts'],
 
     // Glob patterns for test files
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
@@ -23,7 +23,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        'src/test/**',
+        'src/tests/**',
         'src/app/**',          // Pages are thin — tested via E2E
         'src/**/*.stories.tsx',
         'src/**/index.ts',
