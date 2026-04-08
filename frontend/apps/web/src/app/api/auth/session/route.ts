@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Step 1: Exchange refresh token for new access token
-    const refreshRes = await fetch(`${API_INTERNAL}/users/auth/token/refresh/`, {
+    const refreshRes = await fetch(`${API_INTERNAL}/users/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),

@@ -106,7 +106,7 @@ import type {
     // ─── Media upload ────────────────────────────────────────────────────────────
   
     /**
-     * POST /api/v1/media/presigned-url/
+     * POST /api/v1/posts/media/presign/
      * Step 1 of the S3 upload flow. Backend creates a media record and returns
      * a presigned URL. Client uploads directly to S3, then calls confirmUpload.
      */
@@ -116,18 +116,18 @@ import type {
       mime_type: string;
     }): Promise<PresignedUploadUrl> => {
       const { data } = await apiClient.post<PresignedUploadUrl>(
-        '/media/presigned-url/',
+        '/posts/media/presign/',
         payload,
       );
       return data;
     },
   
     /**
-     * POST /api/v1/media/{mediaId}/confirm/
+     * POST /api/v1/posts/media/{mediaId}/confirm/
      * Step 3: After S3 upload completes, tell backend to start Celery transcoding.
      */
     confirmUpload: async (mediaId: string): Promise<void> => {
-      await apiClient.post(`/media/${mediaId}/confirm/`);
+      await apiClient.post(`/posts/media/${mediaId}/confirm/`);
     },
   };
   

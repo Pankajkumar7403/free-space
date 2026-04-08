@@ -11,6 +11,7 @@ app_name = "feed"
 urlpatterns = [
     path("", views.FeedView.as_view(), name="home"),
     path("explore/", views.ExploreFeedView.as_view(), name="explore"),
+    path("hashtag/<str:name>/", views.HashtagFeedView.as_view(), name="hashtag-feed"),
     path(
         "hashtags/<str:name>/subscribe/",
         views.HashtagSubscriptionView.as_view(),

@@ -8,7 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.feed.selectors import get_explore_feed, get_user_feed
+from apps.feed.selectors import get_explore_feed, get_hashtag_feed, get_user_feed
 from apps.feed.services import (
     subscribe_to_hashtag,
     unsubscribe_from_hashtag,
@@ -58,6 +58,34 @@ class ExploreFeedView(APIView):
 
         feed_page = get_explore_feed(
             user=request.user,
+            cursor=cursor,
+            page_size=page_size,
+        )
+
+        return Response(
+            {
+                "results": PostListSerializer(feed_page.posts, many=True).data,
+                "next_cursor": feed_page.next_cursor,
+                "source": feed_page.source,
+            }
+        )
+
+
+class HashtagFeedView(APIView):
+    """
+    GET /api/v1/feed/hashtag/<name>/
+    Returns cursor-paginated public posts tagged with the given hashtag.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, name: str) -> Response:
+        cursor = int(request.query_params.get("cursor", 0))
+        page_size = min(int(request.query_params.get("page_size", 20)), 50)
+
+        feed_page = get_hashtag_feed(
+            user=request.user,
+            hashtag_name=name,
             cursor=cursor,
             page_size=page_size,
         )

@@ -12,7 +12,7 @@
  * as an httpOnly cookie (JavaScript can never read httpOnly cookies).
  */
 export async function persistRefreshToken(refreshToken: string): Promise<void> {
-    await fetch('/api/auth/set-cookie', {
+    await fetch('/api/users/set-cookie', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -26,7 +26,7 @@ export async function persistRefreshToken(refreshToken: string): Promise<void> {
    * and delete the httpOnly cookie.
    */
   export async function destroySession(): Promise<void> {
-    await fetch('/api/auth/logout', {
+    await fetch('/api/users/logout', {
       method: 'POST',
       credentials: 'include',
     });
@@ -42,7 +42,7 @@ export async function persistRefreshToken(refreshToken: string): Promise<void> {
     access: string;
   } | null> {
     try {
-      const res = await fetch('/api/auth/session', {
+      const res = await fetch('/api/users/session', {
         credentials: 'include',
         cache: 'no-store',
       });

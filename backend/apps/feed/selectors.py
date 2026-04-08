@@ -116,6 +116,38 @@ def get_explore_feed(
     return FeedPage(posts=posts, next_cursor=next_cursor, source="redis")
 
 
+def get_hashtag_feed(
+    *,
+    user: User,
+    hashtag_name: str,
+    cursor: int = 0,
+    page_size: int = 20,
+) -> FeedPage:
+    """
+    Hashtag feed: public posts tagged with the given hashtag, newest first.
+    Filters out posts from blocked users.
+    """
+    blocked_ids = set(get_blocked_users(user).values_list("pk", flat=True))
+
+    qs = (
+        Post.objects.filter(
+            hashtags__name__iexact=hashtag_name,
+            status=PostStatus.PUBLISHED,
+            is_deleted=False,
+            visibility=PostVisibility.PUBLIC,
+        )
+        .exclude(author_id__in=blocked_ids)
+        .select_related("author")
+        .prefetch_related("media", "hashtags")
+        .order_by("-created_at")
+        .distinct()
+    )
+
+    posts = list(qs[cursor : cursor + page_size])
+    next_cursor = cursor + page_size if len(posts) >= page_size else None
+    return FeedPage(posts=posts, next_cursor=next_cursor, source="db")
+
+
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 

@@ -17,6 +17,7 @@ import { PRONOUNS, GENDER_IDENTITY, SEXUAL_ORIENTATION, ApiException } from '@qo
 import { authApi } from '@qommunity/api-client';
 
 import { useAuthStore } from '@/stores/authStore';
+import { persistRefreshToken } from '@/lib/session';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';

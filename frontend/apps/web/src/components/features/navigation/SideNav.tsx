@@ -38,7 +38,7 @@ export function SideNav() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/users/logout', { method: 'POST' });
       clearAuth();
     } catch {
       toast({ title: 'Logout failed', description: 'Please try again.', variant: 'error' });

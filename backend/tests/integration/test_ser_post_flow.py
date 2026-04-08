@@ -29,7 +29,7 @@ class TestUserPostFlow:
 
         # 2. Authenticate (get token)
         login_response = client.post(
-            "/api/auth/login/",
+            "/api/users/login/",
             {
                 "email": "newbie@example.com",
                 "password": "strongpass123",

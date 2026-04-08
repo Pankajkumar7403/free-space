@@ -18,7 +18,7 @@ export function OAuthButtons({ callbackUrl }: OAuthButtonsProps) {
     // Redirect to backend OAuth2 initiation endpoint
     // Backend: GET /api/v1/users/auth/oauth/{provider}/init/?redirect_uri=...
     const redirectUri = encodeURIComponent(
-      `${window.location.origin}/api/auth/oauth/callback?provider=${provider}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      `${window.location.origin}/api/users/oauth/callback?provider=${provider}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
     );
     window.location.href = `/api/v1/users/auth/oauth/${provider}/init/?redirect_uri=${redirectUri}`;
   };

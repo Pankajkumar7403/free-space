@@ -165,9 +165,15 @@ importers:
       '@qommunity/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@qommunity/hooks':
+        specifier: workspace:*
+        version: link:../../packages/hooks
       '@qommunity/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@qommunity/ui-kit':
+        specifier: workspace:*
+        version: link:../../packages/ui-kit
       '@qommunity/validators':
         specifier: workspace:*
         version: link:../../packages/validators

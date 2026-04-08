@@ -38,6 +38,8 @@
         "@radix-ui/react-slot": "^1.1.0",
         "framer-motion": "^11.3.0",
         "@qommunity/types": "workspace:*",
+        "@qommunity/hooks": "workspace:*",
+        "@qommunity/ui-kit": "workspace:*",
         "@qommunity/api-client": "workspace:*",
         "@qommunity/validators": "workspace:*",
         "next-themes": "^0.3.0",

@@ -276,7 +276,7 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_HEADERS = [
+CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
     "authorization",
@@ -287,6 +287,7 @@ CORS_ALLOWED_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
     "x-app-version",
+    "x-request-id",
 ]
 
 # ── Prometheus ───────────────────────────────────────────────────────────────

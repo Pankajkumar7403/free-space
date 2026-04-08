@@ -97,6 +97,19 @@ class NotificationDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class NotificationMarkReadView(APIView):
+    """POST /api/v1/notifications/<notification_id>/read/"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, notification_id: uuid.UUID):
+        notification = mark_notification_read(
+            notification_id=notification_id,
+            user_id=request.user.id,
+        )
+        return Response(NotificationSerializer(notification).data)
+
+
 class NotificationPreferenceView(APIView):
     """
     GET   /api/v1/notifications/preferences/
