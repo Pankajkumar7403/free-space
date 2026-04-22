@@ -17,29 +17,41 @@ from apps.users.selectors import (
     search_users,
 )
 from apps.users.serializers import (
+    ForgotPasswordSerializer,
     FollowSerializer,
     LoginSerializer,
+    OAuthCallbackSerializer,
+    OAuthInitSerializer,
+    ResendVerificationEmailSerializer,
     RefreshTokenSerializer,
     RegisterSerializer,
+    ResetPasswordSerializer,
     UpdateProfileSerializer,
     UserPrivateSerializer,
     UserPublicSerializer,
+    VerifyEmailSerializer,
 )
 from apps.users.services import (
     CreateUserInput,
     UpdateProfileInput,
     accept_follow_request,
     authenticate_user,
+    build_oauth_init_url,
     block_user,
     create_user,
     deactivate_user,
     follow_user,
+    issue_email_verification_code,
+    issue_password_reset_code,
     mute_user,
+    oauth_login_or_register,
     reject_follow_request,
+    reset_password_with_otp,
     unblock_user,
     unfollow_user,
     unmute_user,
     update_profile,
+    verify_email_with_otp,
 )
 from core.pagination.cursor import CursorPagination
 from core.security.jwt import blacklist_refresh_token, create_token_pair
@@ -67,6 +79,8 @@ class RegisterView(APIView):
             {
                 "user": UserPrivateSerializer(user).data,
                 "tokens": tokens,
+                "access": tokens["access"],
+                "refresh": tokens["refresh"],
                 "email_verification_sent": True,
             },
             status=status.HTTP_201_CREATED,
@@ -85,7 +99,130 @@ class LoginView(APIView):
 
         user = authenticate_user(email=d["email"], password=d["password"])
         tokens = create_token_pair(user)
-        return Response({"user": UserPrivateSerializer(user).data, "tokens": tokens})
+        return Response(
+            {
+                "user": UserPrivateSerializer(user).data,
+                "tokens": tokens,
+                "access": tokens["access"],
+                "refresh": tokens["refresh"],
+            }
+        )
+
+
+class ForgotPasswordView(APIView):
+    """POST /api/v1/users/forgot-password/"""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        issue_password_reset_code(email=serializer.validated_data["email"])
+        # Generic success response prevents email enumeration.
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(APIView):
+    """POST /api/v1/users/reset-password/"""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+        reset_password_with_otp(otp=d["otp"], new_password=d["new_password"])
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+class VerifyEmailView(APIView):
+    """POST /api/v1/users/verify-email/"""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get("email") or getattr(request.user, "email", "")
+        if not email:
+            return Response(
+                {"detail": "email is required for unauthenticated verification"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        verify_email_with_otp(otp=serializer.validated_data["otp"], email=email)
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+class ResendVerificationEmailView(APIView):
+    """POST /api/v1/users/verify-email/resend/"""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = ResendVerificationEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get("email") or getattr(request.user, "email", "")
+        if not email:
+            return Response(
+                {"detail": "email is required for unauthenticated resend"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        issue_email_verification_code(email=email)
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+class OAuthInitView(APIView):
+    """GET /api/v1/users/oauth/<provider>/init/?redirect_uri=..."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request, provider: str) -> Response:
+        serializer = OAuthInitSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        init_url = build_oauth_init_url(
+            provider=provider, redirect_uri=serializer.validated_data["redirect_uri"]
+        )
+        return Response({"url": init_url}, status=status.HTTP_200_OK)
+
+
+class OAuthCallbackView(APIView):
+    """POST /api/v1/users/oauth/<provider>/"""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request, provider: str) -> Response:
+        serializer = OAuthCallbackSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+        user = oauth_login_or_register(
+            provider=provider,
+            code=d["code"],
+            redirect_uri=d["redirect_uri"],
+            state=d.get("state"),
+        )
+        tokens = create_token_pair(user)
+        return Response(
+            {
+                "user": UserPrivateSerializer(user).data,
+                "tokens": tokens,
+                "access": tokens["access"],
+                "refresh": tokens["refresh"],
+            }
+        )
+
+
+class FaviconFallbackView(APIView):
+    """
+    GET /api/v1/users/favicon-16.png/ and /favicon-32.png/
+
+    Some clients can request favicon paths relative to /users/*.
+    Return 204 instead of letting username catch-all route produce 401.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class LogoutView(APIView):

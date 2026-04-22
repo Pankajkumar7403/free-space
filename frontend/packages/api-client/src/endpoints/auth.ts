@@ -65,7 +65,7 @@ import type {
     oauthCallback: async (payload: OAuthCallbackPayload): Promise<LoginResponse> => {
       const { data } = await apiClient.post<LoginResponse>(
         `${BASE}/oauth/${payload.provider}/`,
-        { code: payload.code, redirect_uri: payload.redirect_uri },
+        { code: payload.code, redirect_uri: payload.redirect_uri, state: payload.state },
       );
       return data;
     },

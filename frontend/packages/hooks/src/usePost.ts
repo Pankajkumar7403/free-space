@@ -8,7 +8,7 @@ import {
     type InfiniteData,
   } from '@tanstack/react-query';
   import { postsApi } from '@qommunity/api-client';
-  import type { Post, PaginatedResponse } from '@qommunity/types';
+  import type { FeedPage, Post, PaginatedResponse } from '@qommunity/types';
   import { queryKeys } from './queryKeys';
   
   // ─── Single post detail ───────────────────────────────────────────────────────
@@ -46,8 +46,61 @@ import {
     return useMutation({
       mutationFn: postsApi.createPost,
       onSuccess: () => {
-        // Invalidate home feed and user posts — new post should appear
-        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.home() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.all() });
+      },
+    });
+  }
+
+  // ─── Bookmark toggle (optimistic, all feed caches) ───────────────────────────
+  export function useBookmarkPost() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: ({
+        postId,
+        isBookmarked,
+      }: {
+        postId: string;
+        isBookmarked: boolean;
+      }) =>
+        isBookmarked
+          ? postsApi.removeBookmark(postId)
+          : postsApi.bookmarkPost(postId),
+
+      onMutate: async ({ postId, isBookmarked }) => {
+        await queryClient.cancelQueries({ queryKey: queryKeys.feed.all() });
+        const previousQueries = queryClient.getQueriesData<InfiniteData<FeedPage>>({
+          queryKey: queryKeys.feed.all(),
+        });
+
+        queryClient.setQueriesData<InfiniteData<FeedPage>>(
+          { queryKey: queryKeys.feed.all() },
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                results: page.results.map((post) => {
+                  if (post.id !== postId) return post;
+                  return { ...post, is_bookmarked: !isBookmarked };
+                }),
+              })),
+            };
+          },
+        );
+
+        return { previousQueries };
+      },
+
+      onError: (_err, _vars, context) => {
+        context?.previousQueries?.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      },
+
+      onSettled: () => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.all() });
       },
     });
   }

@@ -3,7 +3,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, Search, PlusSquare, Bell, User, Settings,
   Compass, Bookmark, LogOut, Menu,
@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/components/ui/Toast';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { destroySession } from '@/lib/session';
 
 interface NavItem {
   label: string;
@@ -30,19 +31,20 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Bookmarks',    href: '/bookmarks',      icon: Bookmark },
 ];
 
-export function SideNav() {
+export function SideNav(): JSX.Element {
   const pathname  = usePathname();
+  const router    = useRouter();
   const user      = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/users/logout', { method: 'POST' });
-      clearAuth();
-    } catch {
-      toast({ title: 'Logout failed', description: 'Please try again.', variant: 'error' });
-    }
+    clearAuth();
+    router.replace('/login');
+    router.refresh();
+    void destroySession().catch(() => {
+      toast({ title: 'Logout sync failed', description: 'Session cleared locally.', variant: 'error' });
+    });
   };
 
   return (

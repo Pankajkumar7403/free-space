@@ -25,6 +25,8 @@ import json
 import logging
 from typing import Any
 
+import redis
+
 from core.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -141,8 +143,29 @@ def feed_remove(user_id: str, post_id: str) -> None:
 
 def blacklist_token(jti: str, ttl: int = SESSION_TTL) -> None:
     """Mark a JWT (by its jti claim) as revoked."""
-    get_redis_client().setex(f"blacklist:{jti}", ttl, "1")
+    try:
+        get_redis_client().setex(f"blacklist:{jti}", ttl, "1")
+    except redis.RedisError as exc:
+        logger.warning(
+            "Redis error while blacklisting JWT; revocation may be delayed until "
+            "Redis is healthy. Check REDIS_URL / CACHES vs your Redis instance.",
+            extra={"error": str(exc)},
+        )
 
 
 def is_token_blacklisted(jti: str) -> bool:
-    return get_redis_client().exists(f"blacklist:{jti}") == 1
+    """
+    Return True if *jti* is present in the revocation set.
+
+    On Redis failure we fail closed (treat token as blacklisted) to preserve
+    revocation guarantees. Public endpoints should avoid sending Authorization
+    headers entirely (handled in frontend api client interceptor).
+    """
+    try:
+        return get_redis_client().exists(f"blacklist:{jti}") == 1
+    except redis.RedisError as exc:
+        logger.warning(
+            "Redis error during JWT blacklist check; failing closed",
+            extra={"error": str(exc)},
+        )
+        return True

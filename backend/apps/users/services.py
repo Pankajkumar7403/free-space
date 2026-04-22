@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
+import base64
+import json
+import secrets
 from dataclasses import dataclass
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
+from django.conf import settings
+from django.core.cache import cache
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
 
 from apps.users.exceptions import (
@@ -111,6 +119,253 @@ def authenticate_user(*, email: str, password: str) -> User:
     if not user.is_active:
         raise AccountInactiveError()
 
+    return user
+
+
+PASSWORD_RESET_TTL_SECONDS = 15 * 60
+EMAIL_VERIFY_TTL_SECONDS = 15 * 60
+_signer = TimestampSigner(salt="users.auth.otp")
+
+
+def _generate_numeric_code(length: int = 6) -> str:
+    return "".join(secrets.choice("0123456789") for _ in range(length))
+
+
+def _cache_key(prefix: str, token: str) -> str:
+    return f"users:{prefix}:{token}"
+
+
+def issue_password_reset_code(*, email: str) -> None:
+    """
+    Generate a one-time reset code for *email* and cache it.
+    Always no-op silently when email is unknown to prevent enumeration.
+    """
+    try:
+        user = User.objects.get(email__iexact=email)
+    except User.DoesNotExist:
+        return
+
+    otp = _generate_numeric_code()
+    signed = _signer.sign(f"pwd:{user.email.lower()}:{otp}")
+    cache.set(_cache_key("pwd-reset", otp), signed, timeout=PASSWORD_RESET_TTL_SECONDS)
+
+
+def reset_password_with_otp(*, otp: str, new_password: str) -> None:
+    """Validate OTP and set the new password."""
+    token = cache.get(_cache_key("pwd-reset", otp))
+    if not token:
+        raise InvalidCredentialsError(message="Invalid or expired reset code.")
+
+    try:
+        payload = _signer.unsign(token, max_age=PASSWORD_RESET_TTL_SECONDS)
+    except (BadSignature, SignatureExpired):
+        cache.delete(_cache_key("pwd-reset", otp))
+        raise InvalidCredentialsError(message="Invalid or expired reset code.")
+
+    parts = payload.split(":")
+    if len(parts) != 3 or parts[0] != "pwd":
+        raise InvalidCredentialsError(message="Invalid reset code payload.")
+
+    user = User.objects.filter(email__iexact=parts[1]).first()
+    if user is None:
+        raise UserNotFoundError()
+
+    validate_password_strength(new_password)
+    user.set_password(new_password)
+    user.save(update_fields=["password"])
+    cache.delete(_cache_key("pwd-reset", otp))
+
+
+def issue_email_verification_code(*, email: str) -> None:
+    """Generate a short-lived code for email verification."""
+    user = User.objects.filter(email__iexact=email).first()
+    if user is None:
+        return
+    otp = _generate_numeric_code()
+    signed = _signer.sign(f"verify:{user.email.lower()}:{otp}")
+    cache.set(_cache_key("email-verify", otp), signed, timeout=EMAIL_VERIFY_TTL_SECONDS)
+
+
+def verify_email_with_otp(*, otp: str, email: str) -> None:
+    token = cache.get(_cache_key("email-verify", otp))
+    if not token:
+        raise InvalidCredentialsError(message="Invalid or expired verification code.")
+    try:
+        payload = _signer.unsign(token, max_age=EMAIL_VERIFY_TTL_SECONDS)
+    except (BadSignature, SignatureExpired):
+        cache.delete(_cache_key("email-verify", otp))
+        raise InvalidCredentialsError(message="Invalid or expired verification code.")
+
+    parts = payload.split(":")
+    if len(parts) != 3 or parts[0] != "verify" or parts[1] != email.lower():
+        raise InvalidCredentialsError(message="Invalid verification code.")
+
+    user = User.objects.filter(email__iexact=email).first()
+    if user is None:
+        raise UserNotFoundError()
+    user.is_verified = True
+    user.save(update_fields=["is_verified"])
+    cache.delete(_cache_key("email-verify", otp))
+
+
+_SUPPORTED_OAUTH_PROVIDERS = {"google", "apple"}
+
+
+def build_oauth_init_url(*, provider: str, redirect_uri: str) -> str:
+    """Return provider authorization URL with signed CSRF state."""
+    provider = provider.lower()
+    if provider not in _SUPPORTED_OAUTH_PROVIDERS:
+        raise InvalidCredentialsError(message="Unsupported OAuth provider.")
+
+    state_payload = json.dumps(
+        {
+            "prefix": "oauth",
+            "provider": provider,
+            "redirect_uri": redirect_uri,
+            "nonce": secrets.token_urlsafe(16),
+        },
+        separators=(",", ":"),
+    )
+    state_token = _signer.sign(state_payload)
+
+    if provider == "google":
+        client_id = getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", "")
+        if not client_id:
+            raise InvalidCredentialsError(message="Google OAuth is not configured.")
+        query = urlencode(
+            {
+                "client_id": client_id,
+                "redirect_uri": redirect_uri,
+                "response_type": "code",
+                "scope": "openid email profile",
+                "access_type": "offline",
+                "prompt": "consent",
+                "state": state_token,
+            }
+        )
+        return f"https://accounts.google.com/o/oauth2/v2/auth?{query}"
+
+    client_id = getattr(settings, "APPLE_OAUTH_CLIENT_ID", "")
+    if not client_id:
+        raise InvalidCredentialsError(message="Apple OAuth is not configured.")
+    query = urlencode(
+        {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "response_mode": "query",
+            "scope": "name email",
+            "state": state_token,
+        }
+    )
+    return f"https://appleid.apple.com/auth/authorize?{query}"
+
+
+def _http_post_form(url: str, data: dict[str, str]) -> dict:
+    encoded = urlencode(data).encode("utf-8")
+    req = Request(url=url, data=encoded, headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urlopen(req, timeout=10) as response:  # noqa: S310
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _http_get_json(url: str, headers: dict[str, str] | None = None) -> dict:
+    req = Request(url=url, headers=headers or {})
+    with urlopen(req, timeout=10) as response:  # noqa: S310
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    try:
+        payload = token.split(".")[1]
+        padding = "=" * (-len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload + padding)
+        return json.loads(decoded.decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise InvalidCredentialsError(message="Invalid OAuth token payload.") from exc
+
+
+@transaction.atomic
+def oauth_login_or_register(
+    *, provider: str, code: str, redirect_uri: str, state: str | None
+) -> User:
+    provider = provider.lower()
+    if provider not in _SUPPORTED_OAUTH_PROVIDERS:
+        raise InvalidCredentialsError(message="Unsupported OAuth provider.")
+
+    if not state:
+        raise InvalidCredentialsError(message="Missing OAuth state.")
+    try:
+        unsigned = _signer.unsign(state, max_age=10 * 60)
+        payload = json.loads(unsigned)
+    except (BadSignature, SignatureExpired, json.JSONDecodeError):
+        raise InvalidCredentialsError(message="Invalid OAuth state.")
+
+    if (
+        payload.get("prefix") != "oauth"
+        or payload.get("provider") != provider
+        or payload.get("redirect_uri") != redirect_uri
+    ):
+        raise InvalidCredentialsError(message="OAuth state mismatch.")
+
+    if provider == "google":
+        token_data = _http_post_form(
+            "https://oauth2.googleapis.com/token",
+            {
+                "code": code,
+                "client_id": getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", ""),
+                "client_secret": getattr(settings, "GOOGLE_OAUTH_CLIENT_SECRET", ""),
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise InvalidCredentialsError(message="Google token exchange failed.")
+        userinfo = _http_get_json(
+            "https://openidconnect.googleapis.com/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        email = str(userinfo.get("email", "")).lower()
+        username_seed = str(userinfo.get("name") or email.split("@")[0] or "googleuser")
+    else:
+        token_data = _http_post_form(
+            "https://appleid.apple.com/auth/token",
+            {
+                "code": code,
+                "client_id": getattr(settings, "APPLE_OAUTH_CLIENT_ID", ""),
+                "client_secret": getattr(settings, "APPLE_OAUTH_CLIENT_SECRET", ""),
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+        id_token = token_data.get("id_token")
+        if not id_token:
+            raise InvalidCredentialsError(message="Apple token exchange failed.")
+        payload = _decode_jwt_payload(id_token)
+        email = str(payload.get("email", "")).lower()
+        username_seed = email.split("@")[0] if email else "appleuser"
+
+    if not email:
+        raise InvalidCredentialsError(message="OAuth provider did not return an email.")
+
+    existing = User.objects.filter(email__iexact=email).first()
+    if existing:
+        return existing
+
+    base_username = "".join(ch for ch in username_seed.lower() if ch.isalnum() or ch == "_")[:20] or "user"
+    username = base_username
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        counter += 1
+        username = f"{base_username[:16]}{counter}"
+
+    user = User.objects.create_user(
+        email=email,
+        username=username,
+        password=secrets.token_urlsafe(24),
+    )
+    user.is_verified = True
+    user.save(update_fields=["is_verified"])
     return user
 
 

@@ -98,16 +98,40 @@ pnpm format
 
 ---
 
+## Local Backend URL (Important)
+
+Use `127.0.0.1` as the canonical local backend host for Qommunity web auth routes:
+
+- `API_INTERNAL_URL=http://127.0.0.1:8000/api/v1`
+- `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1`
+
+Do not mix `localhost` and `127.0.0.1` during local auth testing. If another
+service is bound to `localhost:8000`, auth proxy calls can hit the wrong API
+target and fail with `404`.
+
+### Quick Auth Baseline Check
+
+```bash
+curl "http://127.0.0.1:8000/api/v1/health/"
+curl "http://localhost:3000/api/auth/oauth/init?provider=google&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Foauth%2Fcallback%3Fprovider%3Dgoogle"
+```
+
+Expected:
+- First command: `200` healthy response from Django.
+- Second command: `200` with `{ "url": "https://accounts.google.com/..." }`.
+
+---
+
 ## Sprint Status
 
 | Sprint | Focus                        | Status        |
 |--------|------------------------------|---------------|
 | S1     | Monorepo Bootstrap           | ✅ Complete   |
 | S2     | Shared Package Core          | ✅ Complete   |
-| S3     | Design System Foundation     | 🟡 Next       |
+| S3     | Design System Foundation     | ✅ Complete   |
 | S4     | Auth UI (web + mobile)       | ✅ Complete   |
-| S5     | Feed Shell                   | 🔵 Planned    |
-| S6     | PostCard & Feed List         | 🔵 Planned    |
+| S5     | Feed Shell                   | ✅ Complete   |
+| S6     | PostCard & Feed List         | ✅ Complete   |
 | ...    | ...                          | 🔵 Planned    |
 
 ---

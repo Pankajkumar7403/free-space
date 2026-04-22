@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 import type { Post } from '@qommunity/types';
-import { useLikePost } from '@qommunity/hooks';
+import { useLikePost, useBookmarkPost } from '@qommunity/hooks';
 
 import { cn } from '@/lib/utils';
 import { formatCount } from '@/lib/utils';
@@ -69,7 +69,8 @@ export function PostCard({ post, isModal = false, onCommentClick }: PostCardProp
   const router        = useRouter();
   const currentUser   = useAuthStore((s) => s.user);
   const { toast }     = useToast();
-  const likePost      = useLikePost();
+  const likePost        = useLikePost();
+  const bookmarkPost    = useBookmarkPost();
 
   const isOwnPost     = currentUser?.id === post.author.id;
   const isFollowing   = post.author.is_following ?? false;
@@ -98,6 +99,17 @@ export function PostCard({ post, isModal = false, onCommentClick }: PostCardProp
   }, [likePost, post.id, post.is_liked, toast]);
 
   // ── Share handler ──────────────────────────────────────────────────────────
+  const handleBookmark = useCallback(() => {
+    bookmarkPost.mutate(
+      { postId: post.id, isBookmarked: post.is_bookmarked },
+      {
+        onError: () => {
+          toast({ title: 'Failed to update bookmark', variant: 'error' });
+        },
+      },
+    );
+  }, [bookmarkPost, post.id, post.is_bookmarked, toast]);
+
   const handleShare = useCallback(async () => {
     const url = `${window.location.origin}/p/${post.id}`;
     try {
@@ -319,9 +331,13 @@ export function PostCard({ post, isModal = false, onCommentClick }: PostCardProp
 
         {/* Bookmark button */}
         <button
+          type="button"
+          onClick={handleBookmark}
+          disabled={bookmarkPost.isPending}
           className={cn(
             'flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-all',
             'hover:bg-muted',
+            'disabled:opacity-60 disabled:pointer-events-none',
             post.is_bookmarked
               ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground',

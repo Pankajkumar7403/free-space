@@ -114,6 +114,38 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=512)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value: str) -> str:
+        validate_password_strength(value)
+        return value
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=512)
+    email = serializers.EmailField(required=False)
+
+
+class ResendVerificationEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+
+
+class OAuthInitSerializer(serializers.Serializer):
+    redirect_uri = serializers.URLField()
+
+
+class OAuthCallbackSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    redirect_uri = serializers.URLField()
+    state = serializers.CharField(required=False, allow_blank=True)
+
+
 class TokenResponseSerializer(serializers.Serializer):
     """Shape of the JWT token pair response."""
 

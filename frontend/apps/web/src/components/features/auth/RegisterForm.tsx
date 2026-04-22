@@ -65,9 +65,9 @@ export function RegisterForm() {
         sexual_orientation: values.sexual_orientation,
       });
 
-      setAuth(user, tokens.access);
-
       await persistRefreshToken(tokens.refresh);
+
+      setAuth(user, tokens.access);
 
       // Redirect to email verification
       router.push('/verify-email');
@@ -81,6 +81,8 @@ export function RegisterForm() {
         } else {
           setServerError(error.message);
         }
+      } else if (error instanceof Error) {
+        setServerError(error.message);
       } else {
         setServerError('Something went wrong. Please try again.');
       }

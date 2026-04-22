@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import quote, urlparse, urlunparse
 
 from celery.schedules import crontab
 from dotenv import load_dotenv
@@ -127,6 +128,15 @@ DATABASES = {
 # ── Cache / Redis ─────────────────────────────────────────────────────────────
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+
+# If REDIS_URL has no credentials but REDIS_PASSWORD is provided, inject it.
+# This prevents silent auth mismatches in local/dev configs.
+parsed_redis = urlparse(REDIS_URL)
+if REDIS_PASSWORD and parsed_redis.scheme.startswith("redis") and "@" not in parsed_redis.netloc:
+    host_port = parsed_redis.netloc or "localhost:6379"
+    redis_netloc = f":{quote(REDIS_PASSWORD, safe='')}@{host_port}"
+    REDIS_URL = urlunparse(parsed_redis._replace(netloc=redis_netloc))
 
 CHANNEL_LAYERS = {
     "default": {
@@ -191,6 +201,10 @@ ELASTICSEARCH_DSL = {
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
 AUTH_USER_MODEL = "users.User"
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
+APPLE_OAUTH_CLIENT_ID = os.getenv("APPLE_OAUTH_CLIENT_ID", "")
+APPLE_OAUTH_CLIENT_SECRET = os.getenv("APPLE_OAUTH_CLIENT_SECRET", "")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),

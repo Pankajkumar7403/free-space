@@ -5,8 +5,8 @@
 //
 // Architecture:
 //   useInfiniteQuery fetches pages using cursor-based pagination.
-//   Each page returns { results, next, previous }.
-//   The "next" cursor is passed as a query param to get the next page.
+//   Each page returns { results, next_cursor, source } (backend contract).
+//   The next_cursor value is passed as the `cursor` query param for the following page.
 //   IntersectionObserver in InfiniteScrollList triggers fetchNextPage().
 
 import {
@@ -15,8 +15,8 @@ import {
     useQueryClient,
     type InfiniteData,
   } from '@tanstack/react-query';
-  import { feedApi, postsApi } from '@qommunity/api-client';
-  import type { FeedPage, FeedItem } from '@qommunity/types';
+import { feedApi, postsApi } from '@qommunity/api-client';
+import type { FeedPage, Post } from '@qommunity/types';
   import { queryKeys } from './queryKeys';
   
   // ─── Home feed ────────────────────────────────────────────────────────────────
@@ -25,7 +25,8 @@ import {
       queryKey: queryKeys.feed.home(),
       queryFn: ({ pageParam }) => feedApi.getHomeFeed(pageParam),
       initialPageParam: undefined,
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      getNextPageParam: (lastPage) =>
+        lastPage.next_cursor !== null ? String(lastPage.next_cursor) : undefined,
       staleTime: 30_000,  // Feed data fresh for 30s — matches backend Redis TTL
     });
   }
@@ -36,7 +37,8 @@ import {
       queryKey: queryKeys.feed.explore(),
       queryFn: ({ pageParam }) => feedApi.getExploreFeed(pageParam),
       initialPageParam: undefined,
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      getNextPageParam: (lastPage) =>
+        lastPage.next_cursor !== null ? String(lastPage.next_cursor) : undefined,
       staleTime: 60_000,
     });
   }
@@ -47,14 +49,15 @@ import {
       queryKey: queryKeys.feed.hashtag(tag),
       queryFn: ({ pageParam }) => feedApi.getHashtagFeed(tag, pageParam),
       initialPageParam: undefined,
-      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      getNextPageParam: (lastPage) =>
+        lastPage.next_cursor !== null ? String(lastPage.next_cursor) : undefined,
       enabled: tag.length > 0,
       staleTime: 60_000,
     });
   }
   
   // ─── Flatten pages → flat item array (used by components) ────────────────────
-  export function flattenFeedPages(data: InfiniteData<FeedPage> | undefined): FeedItem[] {
+export function flattenFeedPages(data: InfiniteData<FeedPage> | undefined): Post[] {
     if (!data) return [];
     return data.pages.flatMap((page) => page.results);
   }
@@ -69,54 +72,70 @@ import {
       mutationFn: ({ postId, isLiked }: { postId: string; isLiked: boolean }) =>
         isLiked ? postsApi.unlikePost(postId) : postsApi.likePost(postId),
   
-      // onMutate fires BEFORE the API call — update the cache immediately
+      // onMutate fires BEFORE the API call — update every feed query (home, explore, hashtag)
       onMutate: async ({ postId, isLiked }) => {
-        // Cancel any outgoing refetches so they don't overwrite our optimistic update
-        await queryClient.cancelQueries({ queryKey: queryKeys.feed.home() });
-  
-        // Snapshot the previous value for rollback
-        const previousFeed = queryClient.getQueryData(queryKeys.feed.home());
-  
-        // Optimistically update every page that contains this post
-        queryClient.setQueryData<InfiniteData<FeedPage>>(
-          queryKeys.feed.home(),
+        await queryClient.cancelQueries({ queryKey: queryKeys.feed.all() });
+
+        const previousQueries = queryClient.getQueriesData<InfiniteData<FeedPage>>({
+          queryKey: queryKeys.feed.all(),
+        });
+
+        queryClient.setQueriesData<InfiniteData<FeedPage>>(
+          { queryKey: queryKeys.feed.all() },
           (old) => {
             if (!old) return old;
             return {
               ...old,
               pages: old.pages.map((page) => ({
                 ...page,
-                results: page.results.map((item) => {
-                  if (item.post.id !== postId) return item;
+                results: page.results.map((post) => {
+                  if (post.id !== postId) return post;
                   return {
-                    ...item,
-                    post: {
-                      ...item.post,
-                      is_liked: !isLiked,
-                      likes_count: isLiked
-                        ? Math.max(0, item.post.likes_count - 1)
-                        : item.post.likes_count + 1,
-                    },
+                    ...post,
+                    is_liked: !isLiked,
+                    likes_count: isLiked
+                      ? Math.max(0, post.likes_count - 1)
+                      : post.likes_count + 1,
                   };
                 }),
               })),
             };
           },
         );
-  
-        return { previousFeed };
+
+        return { previousQueries };
       },
-  
-      // onError: roll back to snapshot if API fails
+
       onError: (_err, _vars, context) => {
-        if (context?.previousFeed) {
-          queryClient.setQueryData(queryKeys.feed.home(), context.previousFeed);
-        }
+        context?.previousQueries?.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       },
-  
-      // onSettled: always refetch to sync server truth after mutation
-      onSettled: () => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.home() });
+
+      // Apply authoritative counts from the API — avoids immediate refetch of feed
+      // (inactive feed queries + missing MSW handlers should not wipe optimistic UI).
+      onSuccess: (data, { postId }) => {
+        queryClient.setQueriesData<InfiniteData<FeedPage>>(
+          { queryKey: queryKeys.feed.all() },
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                results: page.results.map((post) =>
+                  post.id === postId
+                    ? {
+                        ...post,
+                        is_liked: data.is_liked,
+                        likes_count: data.likes_count,
+                      }
+                    : post,
+                ),
+              })),
+            };
+          },
+        );
       },
     });
   }

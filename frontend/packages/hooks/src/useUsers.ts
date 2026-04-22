@@ -126,9 +126,25 @@ import {
           );
         }
       },
-  
-      onSettled: (_data, _err, username) => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.users.profile(username) });
+
+      // Confirm with server payload — avoid refetching profile immediately (tests + MSW
+      // may return stale is_following until backend contract is richer).
+      onSuccess: (data, username) => {
+        queryClient.setQueryData<User>(queryKeys.users.profile(username), (old) => {
+          if (!old) return old;
+          if (data.status === 'following') {
+            return {
+              ...old,
+              is_following: true,
+              follow_request_sent: false,
+            };
+          }
+          return {
+            ...old,
+            is_following: false,
+            follow_request_sent: true,
+          };
+        });
       },
     });
   }
@@ -168,11 +184,9 @@ import {
           );
         }
       },
-  
-      onSettled: (_data, _err, username) => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.users.profile(username) });
-        // Also invalidate home feed — unfollowing removes their posts
-        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.home() });
+
+      onSuccess: (_void, username) => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.feed.all() });
       },
     });
   }

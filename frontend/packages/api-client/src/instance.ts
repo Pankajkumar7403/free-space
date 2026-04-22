@@ -6,7 +6,12 @@
 //  - Error normalisation → ApiException (mirrors backend BaseAPIException)
 //  - Request ID header for backend structured logging correlation
 
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 
 import { ApiException, type ApiError } from '@qommunity/types';
 
@@ -36,7 +41,7 @@ export function configureApiClient(
 
 // ─── Axios instance ────────────────────────────────────────────────────────────
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api/v1',
   timeout: 15_000,
   headers: {
     'Content-Type': 'application/json',
@@ -47,9 +52,14 @@ export const apiClient: AxiosInstance = axios.create({
 
 // ─── Request interceptor — inject access token ────────────────────────────────
 apiClient.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = _tokenStore?.getAccessToken();
-    if (token) {
+    // Public auth endpoints must not send a stale Bearer token: DRF still runs
+    // JWTAuthentication when Authorization is present, which hits Redis for
+    // blacklist checks and can 500 if Redis is misconfigured.
+    if (shouldOmitBearerForRequest(config)) {
+      delete config.headers.Authorization;
+    } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     // Correlate with backend RequestLoggingMiddleware
@@ -136,11 +146,23 @@ apiClient.interceptors.response.use(
 // ─── Error normaliser — always throw ApiException ────────────────────────────
 function normaliseError(error: AxiosError<ApiError>): ApiException {
   const status = error.response?.status ?? 0;
-  const data = error.response?.data;
+  const data = error.response?.data as
+    | (ApiError & { error?: { code?: string; message?: string; detail?: Record<string, unknown> } })
+    | undefined;
 
   // Backend returned a structured error
   if (data?.error_code) {
     return new ApiException(data, status);
+  }
+  if (data?.error?.code) {
+    return new ApiException(
+      {
+        error_code: data.error.code,
+        message: data.error.message ?? 'Request failed.',
+        details: data.error.detail ?? {},
+      },
+      status,
+    );
   }
 
   // Network error or unexpected shape
@@ -157,4 +179,20 @@ function normaliseError(error: AxiosError<ApiError>): ApiException {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function generateRequestId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Paths that must not receive Authorization (see request interceptor). */
+function shouldOmitBearerForRequest(config: InternalAxiosRequestConfig): boolean {
+  const base = String(config.baseURL ?? apiClient.defaults.baseURL ?? '');
+  const urlPart = String(config.url ?? '');
+  const joined = `${base.replace(/\/+$/, '')}/${urlPart.replace(/^\/+/, '')}`.toLowerCase();
+  return (
+    joined.includes('/users/login') ||
+    joined.includes('/users/register') ||
+    joined.includes('/users/token/refresh') ||
+    joined.includes('/users/forgot-password') ||
+    joined.includes('/users/reset-password') ||
+    joined.includes('/users/verify-email') ||
+    joined.includes('/users/oauth/')
+  );
 }

@@ -52,10 +52,11 @@ export function LoginForm() {
     setServerError(null);
     try {
       const { user, tokens } = await authApi.login(values);
-      setAuth(user, tokens.access);
 
-      // Store refresh token in httpOnly cookie via Next.js API route
+      // httpOnly refresh cookie must succeed before we treat the session as complete
       await persistRefreshToken(tokens.refresh);
+
+      setAuth(user, tokens.access);
 
       router.push(callbackUrl);
       router.refresh();
@@ -72,6 +73,8 @@ export function LoginForm() {
         } else {
           setServerError(error.message);
         }
+      } else if (error instanceof Error) {
+        setServerError(error.message);
       } else {
         setServerError('Something went wrong. Please try again.');
       }

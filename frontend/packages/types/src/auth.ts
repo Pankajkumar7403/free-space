@@ -55,6 +55,7 @@ export interface OAuthCallbackPayload {
   provider: OAuthProvider;
   code: string;
   redirect_uri: string;
+  state?: string;
 }
 
 // ─── Email verification ───────────────────────────────────────────────────────

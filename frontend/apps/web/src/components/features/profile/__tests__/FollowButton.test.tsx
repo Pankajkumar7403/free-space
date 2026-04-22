@@ -1,13 +1,13 @@
 // 📍 LOCATION: free-space/frontend/apps/web/src/components/features/profile/__tests__/FollowButton.test.tsx
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 
 import { server } from '@/test/mswServer';
 import { mockUser, mockUserSummary } from '@/test/factories';
+import { renderWithAppProviders } from '@/test/renderWithAppProviders';
 import { FollowButton } from '../FollowButton';
 import type { User } from '@qommunity/types';
 
@@ -25,8 +25,7 @@ vi.mock('@/stores/authStore', () => ({
 }));
 
 function renderWithQuery(ui: React.ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  return renderWithAppProviders(ui);
 }
 
 describe('FollowButton', () => {

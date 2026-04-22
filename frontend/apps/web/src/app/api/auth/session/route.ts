@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import type { AuthenticatedUser } from '@qommunity/types';
 
 const COOKIE_NAME   = 'qommunity_refresh';
-const API_INTERNAL  = process.env.API_INTERNAL_URL ?? 'http://localhost:8000/api/v1';
+const API_INTERNAL  = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:8000/api/v1';
 
 interface RefreshResponse {
   access: string;

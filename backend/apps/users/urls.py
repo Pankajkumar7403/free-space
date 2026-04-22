@@ -9,9 +9,24 @@ from apps.users import views
 app_name = "users"
 
 urlpatterns = [
+    # ── Favicon fallback ──────────────────────────────────────────────────────
+    # Avoid 401 noise when browser resolves favicon relative to /users/* paths.
+    path("favicon-16.png/", views.FaviconFallbackView.as_view(), name="favicon-16"),
+    path("favicon-32.png/", views.FaviconFallbackView.as_view(), name="favicon-32"),
+
     # ── Auth ──────────────────────────────────────────────────────────────────
     path("register/", views.RegisterView.as_view(), name="register"),
     path("login/", views.LoginView.as_view(), name="login"),
+    path("forgot-password/", views.ForgotPasswordView.as_view(), name="forgot-password"),
+    path("reset-password/", views.ResetPasswordView.as_view(), name="reset-password"),
+    path("verify-email/", views.VerifyEmailView.as_view(), name="verify-email"),
+    path(
+        "verify-email/resend/",
+        views.ResendVerificationEmailView.as_view(),
+        name="verify-email-resend",
+    ),
+    path("oauth/<str:provider>/init/", views.OAuthInitView.as_view(), name="oauth-init"),
+    path("oauth/<str:provider>/", views.OAuthCallbackView.as_view(), name="oauth-callback"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
 
