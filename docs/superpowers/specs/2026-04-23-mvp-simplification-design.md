@@ -137,20 +137,23 @@ apps/common/moderation/text_filter.py  # blocklist + evasion detection, no ML
 
 Replace `apps/feed/selectors.py` with a pure DB query. No Redis, no celebrity mode, no fanout.
 
+**Pagination:** Use `core/pagination/cursor.py` — `CursorPagination` (DRF opaque cursor, ordered by `-created_at`). The selector returns a raw `QuerySet`; the view applies `CursorPagination.paginate_queryset()`. This avoids offset-based pagination which causes duplicate or skipped posts when new content is inserted while the user scrolls.
+
+`FeedCursorPagination` (which ordered by `-score`) is deleted along with `ranking.py` — it has no purpose in the simplified architecture.
+
 ```python
-from django.db.models import Q
+# apps/feed/selectors.py
+from django.db.models import Q, QuerySet
 from apps.posts.constants import PostStatus, PostVisibility
 from apps.posts.models import Post
 from apps.users.models import Follow
 from apps.users.selectors import get_blocked_users
-from dataclasses import dataclass
 
-@dataclass
-class FeedPage:
-    posts: list
-    next_cursor: int | None
-
-def get_user_feed(*, user, cursor=0, page_size=20) -> FeedPage:
+def get_user_feed(*, user) -> QuerySet:
+    """
+    Returns an ordered QuerySet for the user's home feed.
+    Pagination is applied by the view using CursorPagination.
+    """
     blocked_ids = get_blocked_users(user).values_list("pk", flat=True)
 
     following_qs = Follow.objects.filter(
@@ -168,7 +171,7 @@ def get_user_feed(*, user, cursor=0, page_size=20) -> FeedPage:
         ],
     )
 
-    qs = (
+    return (
         Post.objects.filter(
             (own_posts | followed_posts),
             status=PostStatus.PUBLISHED,
@@ -180,11 +183,17 @@ def get_user_feed(*, user, cursor=0, page_size=20) -> FeedPage:
         .order_by("-created_at")
     )
 
-    posts = list(qs[cursor : cursor + page_size])
-    return FeedPage(
-        posts=posts,
-        next_cursor=cursor + page_size if len(posts) >= page_size else None,
-    )
+
+# apps/feed/views.py — example usage
+from core.pagination.cursor import CursorPagination
+
+class FeedView(APIView):
+    def get(self, request):
+        qs = get_user_feed(user=request.user)
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = PostSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 ```
 
 Explore and hashtag feeds retain their existing DB selectors unchanged.
@@ -217,13 +226,17 @@ if comment.author_id != post.author_id:
     )
 
 # apps/users/services.py — after follow_user()
-create_notification(
-    recipient_id=followed_user.pk,
-    actor_id=follower.pk,
-    notification_type=NotificationType.FOLLOW,
-    target_id=None,
-    target_content_type_label=None,
-)
+# Only notify when the follow relation is newly created.
+# Guards against duplicate notifications on re-follow or duplicate requests.
+follow, created = Follow.objects.get_or_create(follower=follower, following=followed_user)
+if created:
+    create_notification(
+        recipient_id=followed_user.pk,
+        actor_id=follower.pk,
+        notification_type=NotificationType.FOLLOW,
+        target_id=None,
+        target_content_type_label=None,
+    )
 ```
 
 `notifications/services.py` (`create_notification`) is unchanged — it already works as a direct call.
@@ -376,11 +389,11 @@ When Qommunity grows beyond MVP, add back complexity in this order:
 
 1. **Redis for caching** — Add `CELERY_RESULT_BACKEND` and Django cache layer when DB query latency becomes measurable. Feed caching is the first candidate.
 
-2. **Feed pre-computation** — When feed queries slow down (typically >10k follows), add a `FeedItem` materialized table populated by Celery tasks on post creation. No Kafka required.
+2. **Async notifications** — Move `create_notification()` calls to a Celery task when notification creation starts adding measurable latency to requests (e.g. a user with many followers triggers many writes). This is a one-line change per call site — lowest effort scaling step after Redis.
 
 3. **Celery beat tasks** — Scheduled jobs (trending hashtags, notification digests, cleanup) added to `config/celery.py` when product needs them.
 
-4. **Async notifications** — Move `create_notification()` calls to a Celery task if notification creation starts blocking request time (e.g., fanout to many followers).
+4. **Feed pre-computation** — When feed queries slow down (typically >10k follows), add a `FeedItem` materialized table populated by Celery tasks on post creation. No Kafka required. This is a larger architectural change — do async notifications and beat tasks first.
 
 5. **Kafka / event bus** — Only justified when multiple independent services need to consume the same events. Premature until you have >1 service.
 
