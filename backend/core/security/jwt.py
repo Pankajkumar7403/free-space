@@ -65,6 +65,26 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 
+def blacklist_refresh_token(refresh_token: str) -> None:
+    """
+    Blacklist a refresh token so it can no longer be used.
+
+    Raises
+    ------
+    core.exceptions.base.AuthenticationError  on invalid token
+    """
+    from rest_framework_simplejwt.exceptions import TokenError  # type: ignore[import]
+    from rest_framework_simplejwt.tokens import RefreshToken  # type: ignore[import]
+
+    from core.exceptions.base import AuthenticationError
+
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+    except TokenError as exc:
+        raise AuthenticationError(message=str(exc)) from exc
+
+
 def get_jwt_settings() -> dict:
     """Return the current Simple JWT settings dict."""
     from rest_framework_simplejwt.settings import api_settings  # type: ignore[import]

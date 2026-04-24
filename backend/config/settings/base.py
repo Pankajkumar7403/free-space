@@ -3,7 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import quote, urlparse, urlunparse
 
-from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,13 +32,9 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    "django_prometheus",
-    "channels",
     "drf_spectacular",
     "rest_framework",
     "corsheaders",
-    "django_elasticsearch_dsl",
-    "django_celery_beat",
     "django_celery_results",
 ]
 if USE_S3:
@@ -56,13 +51,11 @@ LOCAL_APPS = [
     "apps.common",
 ]
 
-INSTALLED_APPS = ["daphne"] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # ── Middleware (order matters) ─────────────────────────────────────────────────
 
 MIDDLEWARE = [
-    # prometheus before-middleware must be first
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     # 1. Safety net — must be first to catch everything below it
     "core.middleware.exception_handler.ExceptionHandlerMiddleware",
     # 2. Django security headers
@@ -75,17 +68,13 @@ MIDDLEWARE = [
     "core.middleware.request_logging.RequestLoggingMiddleware",
     # 6. Safety response header injection
     "apps.common.safety.middleware.CrisisResourceMiddleware",
-    # 7. Prometheus metrics
-    "core.middleware.metrics.PrometheusMetricsMiddleware",
-    # 6. Standard Django middleware
+    # 7. Standard Django middleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # prometheus after-middleware must be last
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -138,17 +127,6 @@ if REDIS_PASSWORD and parsed_redis.scheme.startswith("redis") and "@" not in par
     redis_netloc = f":{quote(REDIS_PASSWORD, safe='')}@{host_port}"
     REDIS_URL = urlunparse(parsed_redis._replace(netloc=redis_netloc))
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://localhost:6379/1")],
-            # Keep channel layer traffic separate from default cache DB.
-            "capacity": 1500,
-            "expiry": 10,
-        },
-    }
-}
 
 CACHES = {
     "default": {
@@ -172,31 +150,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "Asia/Kolkata")
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_RESULT_EXTENDED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
 
 CELERY_BEAT_SCHEDULE = {}
-CELERY_BEAT_SCHEDULE.update(
-    {
-        "cleanup-old-notifications": {
-            "task": "apps.notifications.tasks.cleanup_old_notifications",
-            "schedule": crontab(hour=3, minute=0),  # daily at 3 AM
-        },
-    }
-)
 
-# ── Kafka ─────────────────────────────────────────────────────────────────────
-
-KAFKA_ENABLED = os.getenv("KAFKA_ENABLED", "false").lower() == "true"
-KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-
-# ── Elasticsearch ──────────────────────────────────────────────────────────────
-ELASTICSEARCH_DSL = {
-    "default": {"hosts": os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")},
-}
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -303,9 +263,6 @@ CORS_ALLOW_HEADERS = [
     "x-app-version",
     "x-request-id",
 ]
-
-# ── Prometheus ───────────────────────────────────────────────────────────────
-PROMETHEUS_EXPORT_MIGRATIONS = False
 
 # ── App version (used in health check + Sentry) ─────────────────────────────
 APP_VERSION = os.getenv("APP_VERSION", "0.0.1")
