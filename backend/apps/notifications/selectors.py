@@ -4,10 +4,6 @@ import uuid
 
 from django.db.models import QuerySet
 
-from apps.notifications.constants import (
-    UNREAD_COUNT_REDIS_KEY,
-    UNREAD_COUNT_TTL_SECONDS,
-)
 from apps.notifications.exceptions import NotificationNotFoundError
 from apps.notifications.models import DeviceToken, Notification, NotificationPreference
 
@@ -37,23 +33,8 @@ def get_notifications_for_user(
 
 
 def get_unread_notification_count(user_id: uuid.UUID) -> int:
-    """
-    Return unread count with Redis caching (TTL = 1 hour).
-    Redis miss → DB query → cache result.
-    """
-    from core.redis.client import get_redis_client
-
-    redis = get_redis_client()
-    cache_key = UNREAD_COUNT_REDIS_KEY.format(user_id=user_id)
-
-    cached = redis.get(cache_key)
-    if cached is not None:
-        return int(cached)
-
-    count = Notification.objects.filter(recipient_id=user_id, is_read=False).count()
-
-    redis.setex(cache_key, UNREAD_COUNT_TTL_SECONDS, count)
-    return count
+    """Return unread notification count direct from DB."""
+    return Notification.objects.filter(recipient_id=user_id, is_read=False).count()
 
 
 def get_notification_preferences(user_id: uuid.UUID) -> NotificationPreference:

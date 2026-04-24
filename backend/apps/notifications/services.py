@@ -95,8 +95,6 @@ def create_notification(
             object_id=target_id,
             message=message,
         )
-        # Invalidate cached count after commit
-        transaction.on_commit(lambda: _invalidate_unread_cache(recipient_id))
 
     dispatch_notification(notification)
 
@@ -123,7 +121,6 @@ def mark_notification_read(
         notification.is_read = True
         notification.read_at = timezone.now()
         notification.save(update_fields=["is_read", "read_at"])
-        _invalidate_unread_cache(user_id)
 
     return notification
 
@@ -134,9 +131,6 @@ def mark_all_notifications_read(*, user_id: uuid.UUID) -> int:
         recipient_id=user_id,
         is_read=False,
     ).update(is_read=True, read_at=timezone.now())
-
-    if count > 0:
-        _invalidate_unread_cache(user_id)
 
     return count
 
@@ -204,14 +198,3 @@ def _resolve_actor_username(actor_id: uuid.UUID | None) -> str | None:
         return None
 
 
-def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
-    from apps.notifications.constants import UNREAD_COUNT_REDIS_KEY
-    from core.redis.client import get_redis_client
-
-    try:
-        get_redis_client().delete(UNREAD_COUNT_REDIS_KEY.format(user_id=user_id))
-    except Exception as exc:
-        logger.warning(
-            "notification.cache_invalidation_failed",
-            extra={"user_id": str(user_id), "error": str(exc)},
-        )

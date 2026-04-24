@@ -16,8 +16,6 @@ from __future__ import annotations
 import logging
 import uuid
 
-from core.redis.client import RedisClient
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,32 +25,13 @@ logger = logging.getLogger(__name__)
 def is_blocked(*, viewer_id: uuid.UUID, target_id: uuid.UUID) -> bool:
     """
     Return True if viewer has blocked target OR target has blocked viewer.
-    Uses Redis cache with 5-min TTL for performance.
     """
     from apps.users.models import BlockedUser
 
-    redis = RedisClient.get_instance()
-    fwd_key = f"block:{viewer_id}:{target_id}"
-    rev_key = f"block:{target_id}:{viewer_id}"
-
-    # Cache hit
-    fwd = redis.get(fwd_key)
-    rev = redis.get(rev_key)
-    if fwd is not None:
-        return fwd == b"1"
-    if rev is not None:
-        return rev == b"1"
-
-    # DB lookup - cache result for 5 min
-    blocked = BlockedUser.objects.filter(
+    return BlockedUser.objects.filter(
         blocker_id__in=[viewer_id, target_id],
         blocked_id__in=[viewer_id, target_id],
     ).exists()
-
-    value = b"1" if blocked else b"0"
-    redis.setex(fwd_key, 300, value)
-    redis.setex(rev_key, 300, value)
-    return blocked
 
 
 def filter_queryset_for_blocks(
@@ -120,23 +99,6 @@ def get_visible_identity_fields(
     return set(
         PRIVATE_IDENTITY_FIELDS
     )  # followers see all; per-field granularity in M8
-
-
-def log_identity_view(*, viewer_id: uuid.UUID, profile_id: uuid.UUID) -> None:
-    """
-    Audit log: record who viewed a user's identity fields.
-    Stored in Redis with 7-day TTL.  Used for outing investigations.
-    """
-    import time
-
-    from apps.common.safety.constants import (
-        IDENTITY_VIEW_AUDIT_KEY,
-        IDENTITY_VIEW_AUDIT_TTL,
-    )
-
-    redis = RedisClient.get_instance()
-    key = IDENTITY_VIEW_AUDIT_KEY.format(viewer_id=viewer_id, profile_id=profile_id)
-    redis.setex(key, IDENTITY_VIEW_AUDIT_TTL, str(time.time()))
 
 
 # -- Crisis resources ---------------------------------------------------------

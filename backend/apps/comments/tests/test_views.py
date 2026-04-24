@@ -9,19 +9,9 @@ from apps.comments.tests.factories import CommentFactory
 from apps.posts.constants import PostVisibility
 from apps.posts.tests.factories import PostFactory
 from apps.users.tests.factories import UserFactory
-from core.redis.client import get_redis_client, reset_client
 from core.testing.base import BaseAPITestCase
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db]
-
-
-@pytest.fixture(autouse=True)
-def clean_redis():
-    reset_client()
-    get_redis_client().flushall()
-    yield
-    get_redis_client().flushall()
-    reset_client()
 
 
 class TestCommentListCreateView(BaseAPITestCase):

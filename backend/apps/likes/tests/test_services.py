@@ -11,18 +11,8 @@ from apps.likes.services import get_like_count, is_liked_by, like_object, unlike
 from apps.posts.constants import PostVisibility
 from apps.posts.tests.factories import PostFactory
 from apps.users.tests.factories import UserFactory
-from core.redis.client import get_redis_client, reset_client
 
 pytestmark = [pytest.mark.unit, pytest.mark.django_db]
-
-
-@pytest.fixture(autouse=True)
-def clean_redis():
-    reset_client()
-    get_redis_client().flushall()
-    yield
-    get_redis_client().flushall()
-    reset_client()
 
 
 class TestLikeObject:
