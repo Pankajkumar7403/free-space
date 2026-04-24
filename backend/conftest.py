@@ -165,3 +165,13 @@ def comment(db, user, public_post):
     from apps.comments.tests.factories import CommentFactory
 
     return CommentFactory(post=public_post, author=user)
+
+
+@pytest.fixture
+def comment_factory(db):
+    from apps.comments.tests.factories import CommentFactory
+
+    def _create(**kwargs):
+        return CommentFactory(**kwargs)
+
+    return _create

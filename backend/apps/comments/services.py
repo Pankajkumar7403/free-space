@@ -80,6 +80,33 @@ def create_comment(data: CreateCommentInput) -> Comment:
         is_flagged=is_flagged,
     )
 
+    # Notify post author about new comment (skip self-comments)
+    from apps.notifications.constants import NotificationType
+    from apps.notifications.services import create_notification
+
+    if str(comment.author_id) != str(post.author_id):
+        create_notification(
+            recipient_id=post.author_id,
+            actor_id=comment.author_id,
+            notification_type=str(NotificationType.COMMENT),
+            target_id=comment.pk,
+            target_content_type_label="comments.Comment",
+        )
+
+    # Notify parent comment author about reply (avoid double-notify if same as post author)
+    if (
+        parent is not None
+        and str(parent.author_id) != str(comment.author_id)
+        and str(parent.author_id) != str(post.author_id)
+    ):
+        create_notification(
+            recipient_id=parent.author_id,
+            actor_id=comment.author_id,
+            notification_type=str(NotificationType.COMMENT_REPLY),
+            target_id=comment.pk,
+            target_content_type_label="comments.Comment",
+        )
+
     return comment
 
 
