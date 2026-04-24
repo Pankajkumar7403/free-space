@@ -8,7 +8,8 @@ import logging
 import time
 
 from rest_framework import status as http_status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,6 +27,17 @@ class HealthCheckView(APIView):
             {"status": "healthy" if healthy else "degraded", "checks": {"database": db}},
             status=200 if healthy else 503,
         )
+
+
+class ReportCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        from apps.common.serializers import ReportSerializer
+        serializer = ReportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(reporter=request.user)
+        return Response(serializer.data, status=http_status.HTTP_201_CREATED)
 
 
 def _check_database() -> dict:
