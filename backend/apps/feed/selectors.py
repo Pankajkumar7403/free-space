@@ -4,12 +4,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-
-from apps.feed.cache import (
-    explore_get_page,
-    feed_exists,
-    feed_get_page,
-)
 from apps.feed.constants import CELEBRITY_FOLLOWER_THRESHOLD
 from apps.posts.constants import PostStatus, PostVisibility
 from apps.posts.models import Post
@@ -39,36 +33,13 @@ def get_user_feed(
 
     Strategy
     --------
-    1. Check Redis — if the feed exists there, serve it (fast path).
-    2. If Redis is cold, fall back to DB query (slow path).
-    3. For every celebrity the user follows, inject their recent posts
-       at read time (fan-out-on-read merge).
-    4. Filter out posts from blocked users.
-    5. Return FeedPage with posts + next cursor.
+    Fall back to DB query since Redis/Kafka infrastructure is removed.
+    Return all posts from followed users + public posts.
     """
     blocked_ids = set(get_blocked_users(user).values_list("pk", flat=True))
 
-    # ── Fast path: Redis ──────────────────────────────────────────────────────
-    if feed_exists(str(user.pk)):
-        post_ids = feed_get_page(str(user.pk), cursor=cursor, page_size=page_size + 20)
-
-        # Inject celebrity posts (fan-out-on-read)
-        celebrity_post_ids = _get_celebrity_posts(user, blocked_ids)
-        all_ids = _merge_and_deduplicate(post_ids, celebrity_post_ids, page_size)
-
-        posts = _fetch_posts(all_ids, user, blocked_ids)
-        next_cursor = cursor + page_size if len(posts) >= page_size else None
-        return FeedPage(posts=posts, next_cursor=next_cursor, source="redis")
-
-    # ── Slow path: DB fallback ────────────────────────────────────────────────
-    logger.info("get_user_feed: Redis cold for user=%s, falling back to DB", user.pk)
     posts = _get_feed_from_db(user, blocked_ids, cursor, page_size)
     next_cursor = cursor + page_size if len(posts) >= page_size else None
-
-    # Trigger async warm-up so next request hits Redis
-    from apps.feed.tasks import warm_user_feed_task
-
-    warm_user_feed_task.delay(user_id=str(user.pk))
 
     return FeedPage(posts=posts, next_cursor=next_cursor, source="db")
 
@@ -81,7 +52,7 @@ def get_explore_feed(
 ) -> FeedPage:
     """
     Explore feed: trending public posts from non-followed users.
-    Served from the global explore Redis ZSet.
+    Fall back to DB query since Redis infrastructure is removed.
     """
     blocked_ids = set(get_blocked_users(user).values_list("pk", flat=True))
     following_ids = set(
@@ -90,7 +61,7 @@ def get_explore_feed(
         )
     )
 
-    post_ids = explore_get_page(cursor=cursor, page_size=page_size + 20)
+    post_ids = []
 
     posts = []
     for pid in post_ids:

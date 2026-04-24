@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from django.db import transaction
 
 from apps.comments.constants import MAX_COMMENT_DEPTH
-from apps.comments.events import emit_comment_created
 from apps.comments.exceptions import (
     CommentDepthExceededError,
     CommentEditForbiddenError,
@@ -80,9 +79,6 @@ def create_comment(data: CreateCommentInput) -> Comment:
         depth=depth,
         is_flagged=is_flagged,
     )
-
-    # Emit Kafka event for notification system
-    emit_comment_created(comment=comment)
 
     return comment
 

@@ -26,7 +26,6 @@ from apps.users.exceptions import (
     UsernameAlreadyExistsError,
     UserNotFoundError,
 )
-from apps.users.events import emit_user_followed
 from apps.users.models import BlockedUser, Follow, MutedUser, User, UserReport
 from apps.users.selectors import (
     email_exists,
@@ -479,8 +478,6 @@ def follow_user(*, follower_id, following_id) -> Follow:
         following=following,
         defaults={"status": status},
     )
-    if follow.status == FollowStatusChoices.ACCEPTED:
-        emit_user_followed(follower_id=str(follower.pk), following_id=str(following.pk))
     return follow
 
 
@@ -511,7 +508,6 @@ def accept_follow_request(*, user_id, follower_id) -> Follow:
 
     follow.status = FollowStatusChoices.ACCEPTED
     follow.save(update_fields=["status", "updated_at"])
-    emit_user_followed(follower_id=str(follower_id), following_id=str(user_id))
     return follow
 
 

@@ -26,14 +26,7 @@ def moderate_text(content: str, content_type: str = "post") -> TextModerationRes
     Raises ValidationError if content should be blocked.
     Returns the result (may be WARN or PASS) so callers can act accordingly.
     """
-    from core.monitoring.prometheus import MODERATION_ACTIONS
-
     result = TextModerationFilter.get_instance().check(content)
-
-    MODERATION_ACTIONS.labels(
-        action=result.action.value,
-        severity=result.severity.value,
-    ).inc()
 
     if result.action == ModerationAction.BLOCK:
         logger.warning(
@@ -71,12 +64,9 @@ def check_for_crisis_content(content: str) -> bool:
 
 def moderate_image_async(media_id: uuid.UUID) -> None:
     """
-    Queue an async Celery task to classify a media object for NSFW content.
-    Called after media upload completes (status = READY).
+    No-op. Media moderation tasks removed in simplification.
     """
-    from apps.common.moderation.tasks import classify_media_image
-
-    classify_media_image.delay(str(media_id))
+    pass
 
 
 def get_crisis_resources(locale: str = "DEFAULT") -> dict:

@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from django.db import transaction
 
 from apps.posts.constants import PostStatus, PostVisibility
-from apps.posts.events import emit_post_created, emit_post_deleted
 from apps.posts.exceptions import PostEditForbiddenError
 from apps.posts.models import Hashtag, Post, PostHashtag
 from apps.posts.selectors import get_post_by_id
@@ -89,10 +88,8 @@ def create_post(data: CreatePostInput) -> Post:
     if data.media_ids:
         _attach_media(post, data.media_ids, author)
 
-    # ── Kafka event ───────────────────────────────────────────────────────────
-    # Called directly so tests can assert on it.
-    # MockKafkaProducer handles dev/test — no real Kafka needed.
-    emit_post_created(post)
+    # ── Events removed ────────────────────────────────────────────────────────
+    # Kafka infrastructure removed in simplification
 
     return post
 
@@ -143,7 +140,7 @@ def update_post(*, post_id, requesting_user_id, data: UpdatePostInput) -> Post:
 @transaction.atomic
 def delete_post(*, post_id, requesting_user_id) -> None:
     """
-    Soft-delete a post. Emits post.deleted Kafka event.
+    Soft-delete a post.
     Raises PostNotFoundError, PostEditForbiddenError.
     """
     post = get_post_by_id(post_id)
@@ -152,7 +149,6 @@ def delete_post(*, post_id, requesting_user_id) -> None:
         raise PostEditForbiddenError()
 
     post.soft_delete()
-    emit_post_deleted(post)
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────

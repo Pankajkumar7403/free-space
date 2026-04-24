@@ -5,7 +5,9 @@
       "Bash(grep -r \"from core.redis\" . --include=\"*.py\")",
       "Bash(grep -r \"from core.feature_flags\" . --include=\"*.py\")",
       "Bash(grep -r \"from core.monitoring.prometheus\" . --include=\"*.py\")",
-      "Bash(grep -r \"from core.middleware.metrics\" . --include=\"*.py\")"
+      "Bash(grep -r \"from core.middleware.metrics\" . --include=\"*.py\")",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
