@@ -58,6 +58,24 @@ def like_object(*, user: User, obj) -> Like:
     except Exception:
         raise AlreadyLikedError()
 
+    author = getattr(obj, "author", None)
+    if author is not None and author.pk != user.pk:
+        from apps.notifications.constants import NotificationType
+        from apps.notifications.services import create_notification
+
+        content_type_label = "posts.Post" if ct_label == CT_POST else "comments.Comment"
+        notification_type = (
+            str(NotificationType.LIKE_POST) if ct_label == CT_POST
+            else str(NotificationType.LIKE_COMMENT)
+        )
+        create_notification(
+            recipient_id=author.pk,
+            actor_id=user.pk,
+            notification_type=notification_type,
+            target_id=obj.pk,
+            target_content_type_label=content_type_label,
+        )
+
     return like
 
 

@@ -60,16 +60,12 @@ def create_notification(
     1. Resolve actor username for the message text.
     2. Resolve ContentType for target_content_type_label (if provided).
     3. Persist Notification row.
-    4. dispatch_notification() → WebSocket (sync) + FCM/Email (Celery tasks).
-    5. Invalidate Redis unread count cache.
 
     Returns None if any required field is missing or the actor == recipient.
     """
     # Never notify users about their own actions
     if actor_id and str(actor_id) == str(recipient_id):
         return None
-
-    from apps.notifications.dispatchers import dispatch_notification
 
     actor_username = _resolve_actor_username(actor_id)
     message = _TEMPLATES.get(notification_type, "You have a new notification").format(
@@ -95,8 +91,6 @@ def create_notification(
             object_id=target_id,
             message=message,
         )
-
-    dispatch_notification(notification)
 
     logger.info(
         "notification.created",
