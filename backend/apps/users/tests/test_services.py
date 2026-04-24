@@ -1,6 +1,8 @@
 # 📁 Location: backend/apps/users/tests/test_services.py
 # ▶  Run:      pytest apps/users/tests/test_services.py -v
 
+from unittest.mock import patch
+
 import pytest
 
 from apps.users.exceptions import (
@@ -18,6 +20,7 @@ from apps.users.models import BlockedUser, Follow
 from apps.users.services import (
     CreateUserInput,
     UpdateProfileInput,
+    accept_follow_request,
     authenticate_user,
     block_user,
     create_user,
@@ -156,6 +159,40 @@ class TestFollowServices:
         b = UserFactory(private=True)
         follow = follow_user(follower_id=a.pk, following_id=b.pk)
         assert follow.status == "pending"
+
+    def test_follow_public_user_emits_user_followed_event(self, db):
+        a = UserFactory(public=True)
+        b = UserFactory(public=True)
+
+        with patch("apps.users.services.emit_user_followed") as mock_emit:
+            follow = follow_user(follower_id=a.pk, following_id=b.pk)
+
+        assert follow.status == "accepted"
+        mock_emit.assert_called_once_with(follower_id=str(a.pk), following_id=str(b.pk))
+
+    def test_follow_private_user_does_not_emit_user_followed_event(self, db):
+        a = UserFactory(public=True)
+        b = UserFactory(private=True)
+
+        with patch("apps.users.services.emit_user_followed") as mock_emit:
+            follow = follow_user(follower_id=a.pk, following_id=b.pk)
+
+        assert follow.status == "pending"
+        mock_emit.assert_not_called()
+
+    def test_accept_private_follow_request_emits_user_followed_event(self, db):
+        follower = UserFactory(public=True)
+        following = UserFactory(private=True)
+        follow_user(follower_id=follower.pk, following_id=following.pk)
+
+        with patch("apps.users.services.emit_user_followed") as mock_emit:
+            follow = accept_follow_request(user_id=following.pk, follower_id=follower.pk)
+
+        assert follow.status == "accepted"
+        mock_emit.assert_called_once_with(
+            follower_id=str(follower.pk),
+            following_id=str(following.pk),
+        )
 
     def test_cannot_follow_self(self, user):
         with pytest.raises(CannotFollowSelfError):
