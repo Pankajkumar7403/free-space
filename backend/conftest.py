@@ -157,6 +157,29 @@ def follow_relationship(db, user, other_user):
     return Follow.objects.create(follower=user, following=other_user, status="accepted")
 
 
+# ── Follow / Block fixtures (available to ALL apps) ──────────────────────────
+
+
+@pytest.fixture
+def follow_factory(db):
+    from apps.users.models import Follow
+
+    def _create(**kwargs):
+        return Follow.objects.create(**kwargs)
+
+    return _create
+
+
+@pytest.fixture
+def block_factory(db):
+    from apps.users.models import BlockedUser
+
+    def _create(**kwargs):
+        return BlockedUser.objects.create(**kwargs)
+
+    return _create
+
+
 # ── Likes / Comments fixtures ─────────────────────────────────────────────────
 
 

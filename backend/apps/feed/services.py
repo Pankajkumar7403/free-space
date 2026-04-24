@@ -1,5 +1,3 @@
-# 📁 Location: backend/apps/feed/services.py
-
 from __future__ import annotations
 
 import logging
@@ -7,7 +5,7 @@ import logging
 from django.db import transaction
 
 from apps.feed.models import HashtagSubscription
-from apps.posts.models import Hashtag, Post
+from apps.posts.models import Hashtag
 from apps.users.selectors import get_user_by_id
 
 logger = logging.getLogger(__name__)
@@ -31,24 +29,3 @@ def unsubscribe_from_hashtag(*, user_id, hashtag_name: str) -> None:
     HashtagSubscription.objects.filter(
         user=user, hashtag__name=hashtag_name.lower()
     ).delete()
-
-
-def push_post_to_explore(*, post: Post) -> None:
-    """
-    Hook for post creation. No-op since Redis infrastructure is removed.
-    """
-    pass
-
-
-def on_user_login(*, user_id: str) -> None:
-    """
-    Hook called when a user logs in. No-op since Redis infrastructure is removed.
-    """
-    pass
-
-
-def on_user_unfollow(*, follower_id: str) -> None:
-    """
-    Hook called when a user unfollows someone. No-op since Redis infrastructure is removed.
-    """
-    pass
