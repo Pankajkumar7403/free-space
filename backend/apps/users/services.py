@@ -473,11 +473,22 @@ def follow_user(*, follower_id, following_id) -> Follow:
         else FollowStatusChoices.ACCEPTED
     )
 
-    follow, _ = Follow.objects.get_or_create(
+    from apps.notifications.constants import NotificationType
+    from apps.notifications.services import create_notification
+
+    follow, created = Follow.objects.get_or_create(
         follower=follower,
         following=following,
         defaults={"status": status},
     )
+    if created and follow.status == FollowStatusChoices.ACCEPTED:
+        create_notification(
+            recipient_id=following.pk,
+            actor_id=follower.pk,
+            notification_type=str(NotificationType.FOLLOW),
+            target_id=None,
+            target_content_type_label=None,
+        )
     return follow
 
 
@@ -508,6 +519,17 @@ def accept_follow_request(*, user_id, follower_id) -> Follow:
 
     follow.status = FollowStatusChoices.ACCEPTED
     follow.save(update_fields=["status", "updated_at"])
+
+    from apps.notifications.constants import NotificationType
+    from apps.notifications.services import create_notification
+
+    create_notification(
+        recipient_id=follow.following_id,
+        actor_id=follow.follower_id,
+        notification_type=str(NotificationType.FOLLOW),
+        target_id=None,
+        target_content_type_label=None,
+    )
     return follow
 
 
