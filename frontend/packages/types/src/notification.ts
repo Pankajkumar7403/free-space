@@ -28,9 +28,3 @@ export interface Notification {
   is_read: boolean;
   created_at: string;
 }
-
-// WebSocket event payload — matches Django Channels broadcast
-export interface NotificationEvent {
-  type: 'notification.new';
-  notification: Notification;
-}
