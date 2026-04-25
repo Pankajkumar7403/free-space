@@ -11,7 +11,17 @@
       "Bash(python -c \"import subprocess; r = subprocess.run\\(['grep', '-r', 'from core.kafka', '.', '--include=*.py'], capture_output=True, text=True\\); print\\('kafka:', r.stdout or 'clean'\\); r2 = subprocess.run\\(['grep', '-r', 'from core.redis', '.', '--include=*.py'], capture_output=True, text=True\\); lines = [l for l in r2.stdout.splitlines\\(\\) if 'apps/common/views.py' not in l]; print\\('redis \\(excl views.py\\):', lines or 'clean'\\)\")",
       "Bash(./.venv/Scripts/python.exe *)",
       "Bash(awk -F '::' '{print $1}')",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(python manage.py check)",
+      "Bash(python -c ' *)",
+      "Bash(python -m pytest apps/likes/tests/test_services.py -v -k \"notification or duplicate or count or liked_by\" --tb=short)",
+      "Bash(.venv/Scripts/python -m pytest apps/likes/tests/test_services.py -v -k \"notification or duplicate or count or liked_by\" --tb=short)",
+      "Bash(.venv/Scripts/python -m pytest apps/likes/tests/test_services.py -v --tb=short)",
+      "Bash(python *)",
+      "Bash(.venv/Scripts/python.exe *)",
+      "Bash(git *)",
+      "Bash(pnpm type-check *)",
+      "Bash(pnpm install *)"
     ]
   }
 }

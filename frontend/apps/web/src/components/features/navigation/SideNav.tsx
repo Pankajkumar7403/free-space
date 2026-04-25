@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, Search, PlusSquare, Bell, User, Settings,
-  Compass, Bookmark, LogOut, Menu,
+  Bookmark, LogOut, Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,7 +25,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home',         href: '/feed',          icon: Home,    exact: true },
   { label: 'Search',       href: '/explore',        icon: Search },
-  { label: 'Explore',      href: '/explore/trending', icon: Compass },
   { label: 'Create',       href: '/create',         icon: PlusSquare },
   { label: 'Notifications',href: '/notifications',  icon: Bell },
   { label: 'Bookmarks',    href: '/bookmarks',      icon: Bookmark },
