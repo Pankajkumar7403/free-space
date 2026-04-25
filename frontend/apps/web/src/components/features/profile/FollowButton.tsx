@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, UserCheck, UserMinus, UserPlus, Clock } from 'lucide-react';
 
-import { useFollowUser, useUnfollowUser, queryKeys } from '@qommunity/hooks';
+import { useFollowUser, useUnfollowUser, queryKeys } from '@/hooks';
 import { usersApi } from '@qommunity/api-client';
 import type { User } from '@qommunity/types';
 

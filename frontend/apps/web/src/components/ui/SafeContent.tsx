@@ -11,7 +11,7 @@
 
 import * as React from 'react';
 import { Eye, Shield } from 'lucide-react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 interface SafeContentProps {
   /** Whether this content should be blurred */

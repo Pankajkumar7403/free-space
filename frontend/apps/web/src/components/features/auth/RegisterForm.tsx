@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2, ChevronDown, Info } from 'lucide-react';
 
-import { registerSchema, type RegisterFormValues } from '@qommunity/validators';
+import { registerSchema, type RegisterFormValues } from '@/lib/validators';
 import { PRONOUNS, GENDER_IDENTITY, SEXUAL_ORIENTATION, ApiException } from '@qommunity/types';
 import { authApi } from '@qommunity/api-client';
 

@@ -11,12 +11,6 @@
       ],
       "@qommunity/api-client": [
         "../../packages/api-client/src/index.ts"
-      ],
-      "@qommunity/validators": [
-        "../../packages/validators/src/index.ts"
-      ],
-      "@qommunity/ui-kit": [
-        "../../packages/ui-kit/src/index.ts"
       ]
     },
     "noEmit": true,

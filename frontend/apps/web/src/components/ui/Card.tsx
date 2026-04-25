@@ -4,7 +4,7 @@
 // Supports hover/active states for interactive cards.
 
 import * as React from 'react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 // ─── Root Card ────────────────────────────────────────────────────────────────
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {

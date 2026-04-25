@@ -50,8 +50,7 @@
       "zod":                           "^3.23.0",
       "axios":                         "^1.7.2",
       "@qommunity/types":              "workspace:*",
-      "@qommunity/api-client":         "workspace:*",
-      "@qommunity/validators":         "workspace:*"
+      "@qommunity/api-client":         "workspace:*"
     },
     "devDependencies": {
       "@babel/core":                   "^7.24.0",

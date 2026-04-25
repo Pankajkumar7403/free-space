@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
-import { loginSchema, type LoginFormValues } from '@qommunity/validators';
+import { loginSchema, type LoginFormValues } from '@/lib/validators';
 import { authApi } from '@qommunity/api-client';
 import { ApiException } from '@qommunity/types';
 

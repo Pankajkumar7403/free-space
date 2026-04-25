@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 import type { Post } from '@qommunity/types';
-import { useLikePost, useBookmarkPost } from '@qommunity/hooks';
+import { useLikePost, useBookmarkPost } from '@/hooks';
 
 import { cn } from '@/lib/utils';
 import { formatCount } from '@/lib/utils';

@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, useQuery } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
-import { queryKeys, flattenFeedPages } from '@qommunity/hooks';
+import { queryKeys, flattenFeedPages } from '@/hooks';
 import type { FeedPage, Post } from '@qommunity/types';
 
 import { server } from '@/test/mswServer';

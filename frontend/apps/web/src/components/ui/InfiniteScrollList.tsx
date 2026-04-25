@@ -8,7 +8,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 interface InfiniteScrollListProps<T> {
   /** All items across all fetched pages */

@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import { RefreshCw } from 'lucide-react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 interface EmptyStateProps {

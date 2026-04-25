@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 import type { UserSummary } from '@qommunity/types';
 
 interface UserCardProps {

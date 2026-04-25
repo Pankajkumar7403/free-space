@@ -10,8 +10,8 @@ import { Loader2 } from 'lucide-react';
 import {
   Modal, ModalContent, ModalHeader, ModalFooter,
   ModalTitle, ModalDescription, ModalClose,
-} from '../primitives/Modal';
-import { cn } from '../lib/cn';
+} from '@/components/ui/Modal';
+import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
   open: boolean;

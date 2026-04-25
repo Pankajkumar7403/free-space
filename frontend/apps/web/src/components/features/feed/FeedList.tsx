@@ -13,7 +13,7 @@ import {
   useExploreFeed,
   useHashtagFeed,
   flattenFeedPages,
-} from '@qommunity/hooks';
+} from '@/hooks';
 import { PostCard } from './PostCard';
 import { FeedSkeleton } from './PostCardSkeleton';
 import { EmptyFeed } from './EmptyFeed';

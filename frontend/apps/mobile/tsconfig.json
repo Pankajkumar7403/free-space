@@ -5,9 +5,7 @@
       "paths": {
         "@/*":                   ["./src/*"],
         "@qommunity/types":      ["../../packages/types/src/index.ts"],
-        "@qommunity/api-client": ["../../packages/api-client/src/index.ts"],
-        "@qommunity/validators": ["../../packages/validators/src/index.ts"],
-        "@qommunity/ui-kit":     ["../../packages/ui-kit/src/index.ts"]
+        "@qommunity/api-client": ["../../packages/api-client/src/index.ts"]
       }
     },
     "include": [

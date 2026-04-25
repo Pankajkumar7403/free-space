@@ -1,4 +1,4 @@
-// 📍 LOCATION: free-space/frontend/packages/validators/src/index.ts
+// 📍 LOCATION: free-space/frontend/apps/web/src/lib/validators/index.ts
 
 export * from './auth.schema';
 export * from './post.schema';

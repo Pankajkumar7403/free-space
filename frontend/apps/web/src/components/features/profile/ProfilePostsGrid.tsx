@@ -10,7 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, MessageCircle, Film } from 'lucide-react';
 
-import { useUserPosts, flattenPostPages } from '@qommunity/hooks';
+import { useUserPosts, flattenPostPages } from '@/hooks';
 import type { Post } from '@qommunity/types';
 import { formatCount } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/Skeleton';

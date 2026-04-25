@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import * as ProgressPrimitive from '@radix-ui/react-progress';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
   /** Whether to show the pride-gradient fill instead of primary colour */

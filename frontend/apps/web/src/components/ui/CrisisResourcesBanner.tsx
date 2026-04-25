@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import { X, Heart } from 'lucide-react';
-import { cn } from '../lib/cn';
+import { cn } from '@/lib/utils';
 
 interface CrisisResource {
   name: string;
