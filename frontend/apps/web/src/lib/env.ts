@@ -31,9 +31,6 @@ export const env = createEnv({
     // Django REST API base URL (via Nginx in production)
     NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:8000/api/v1'),
 
-    // WebSocket URL (Django Channels)
-    NEXT_PUBLIC_WS_URL: z.string().default('ws://localhost:8000/ws'),
-
     // App URL
     NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
@@ -56,7 +53,6 @@ export const env = createEnv({
     NODE_ENV:             process.env.NODE_ENV,
     // Client
     NEXT_PUBLIC_API_URL:      process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_WS_URL:       process.env.NEXT_PUBLIC_WS_URL,
     NEXT_PUBLIC_APP_URL:      process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SENTRY_DSN:   process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_POSTHOG_KEY:  process.env.NEXT_PUBLIC_POSTHOG_KEY,

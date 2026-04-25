@@ -202,53 +202,6 @@ class TestModerateTextService:
         assert result.action == ModerationAction.WARN
 
 
-# -- Image classifier ---------------------------------------------------------
-
-
-class TestImageClassifierStub:
-
-    @override_settings(NSFW_CLASSIFIER_BACKEND="stub")
-    def test_stub_always_returns_pass(self):
-        from apps.common.moderation.constants import ModerationAction
-        from apps.common.moderation.image_classifier import classify_image
-
-        result = classify_image("images/any-key.jpg")
-        assert result.action == ModerationAction.PASS
-
-    @override_settings(NSFW_CLASSIFIER_BACKEND="stub")
-    def test_stub_confidence_is_zero(self):
-        from apps.common.moderation.image_classifier import classify_image
-
-        result = classify_image("images/any-key.jpg")
-        assert result.confidence == 0.0
-
-    def test_image_moderation_result_dataclass(self):
-        from apps.common.moderation.constants import (
-            ModerationAction,
-            ModerationSeverity,
-        )
-        from apps.common.moderation.image_classifier import ImageModerationResult
-
-        result = ImageModerationResult(
-            action=ModerationAction.PASS,
-            severity=ModerationSeverity.LOW,
-            confidence=0.0,
-        )
-        assert result.action == ModerationAction.PASS
-
-
-class TestImageClassifierRekognitionFallback:
-
-    @override_settings(NSFW_CLASSIFIER_BACKEND="rekognition")
-    def test_rekognition_failure_returns_pass(self):
-        """boto3 errors must be caught - fail open, never block clean images."""
-        from apps.common.moderation.constants import ModerationAction
-        from apps.common.moderation.image_classifier import classify_image
-
-        with patch("boto3.client", side_effect=Exception("AWS error")):
-            result = classify_image("images/test.jpg")
-        assert result.action == ModerationAction.PASS
-
 
 # -- Crisis resources ---------------------------------------------------------
 

@@ -1,7 +1,7 @@
 // 📍 LOCATION: free-space/frontend/packages/api-client/src/endpoints/auth.ts
 //
 // Auth API calls — map to backend apps/users/views.py auth endpoints
-// Base URL: /api/v1/users/auth/
+// Base URL: /api/v1/users/
 
 import type {
     LoginPayload,
@@ -17,11 +17,11 @@ import type {
   
   import { apiClient } from '../instance';
   
-  const BASE = '/users/auth';
+  const BASE = '/users';
   
   export const authApi = {
     /**
-     * POST /api/v1/users/auth/login/
+     * POST /api/v1/users/login/
      * Returns user + JWT token pair.
      */
     login: async (payload: LoginPayload): Promise<LoginResponse> => {
@@ -30,7 +30,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/register/
+     * POST /api/v1/users/register/
      * Creates account and returns user + token pair.
      * Triggers email verification OTP via Celery.
      */
@@ -40,7 +40,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/logout/
+     * POST /api/v1/users/logout/
      * Blacklists refresh token in Redis.
      */
     logout: async (refreshToken: string): Promise<void> => {
@@ -48,7 +48,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/token/refresh/
+     * POST /api/v1/users/token/refresh/
      * Called transparently by the Axios interceptor — not typically called directly.
      */
     refreshToken: async (refreshToken: string): Promise<RefreshResponse> => {
@@ -59,19 +59,19 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/oauth/{provider}/
+     * POST /api/v1/users/oauth/{provider}/
      * Handles Google and Apple OAuth2 callback.
      */
     oauthCallback: async (payload: OAuthCallbackPayload): Promise<LoginResponse> => {
       const { data } = await apiClient.post<LoginResponse>(
         `${BASE}/oauth/${payload.provider}/`,
-        { code: payload.code, redirect_uri: payload.redirect_uri },
+        { code: payload.code, redirect_uri: payload.redirect_uri, state: payload.state },
       );
       return data;
     },
   
     /**
-     * POST /api/v1/users/auth/verify-email/
+     * POST /api/v1/users/verify-email/
      * Verifies the OTP sent to the user's email.
      */
     verifyEmail: async (payload: VerifyEmailPayload): Promise<void> => {
@@ -79,7 +79,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/verify-email/resend/
+     * POST /api/v1/users/verify-email/resend/
      * Re-sends the OTP. Rate-limited by backend.
      */
     resendVerificationEmail: async (): Promise<void> => {
@@ -87,7 +87,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/forgot-password/
+     * POST /api/v1/users/forgot-password/
      * Sends OTP to email for password reset.
      */
     forgotPassword: async (payload: ForgotPasswordPayload): Promise<void> => {
@@ -95,7 +95,7 @@ import type {
     },
   
     /**
-     * POST /api/v1/users/auth/reset-password/
+     * POST /api/v1/users/reset-password/
      */
     resetPassword: async (payload: ResetPasswordPayload): Promise<void> => {
       await apiClient.post(`${BASE}/reset-password/`, payload);

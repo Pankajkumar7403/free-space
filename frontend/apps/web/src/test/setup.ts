@@ -1,4 +1,4 @@
-// 📍 LOCATION: free-space/frontend/apps/web/src/tests/setup.ts
+// 📍 LOCATION: free-space/frontend/apps/web/src/test/setup.ts
 //
 // Runs before every test file.
 // Sets up:
@@ -10,7 +10,21 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
-import { server } from './mocks/server';
+import { configureApiClient } from '@qommunity/api-client';
+
+import { server } from './mswServer';
+
+// Stable API base + token store so Axios interceptors behave predictably under MSW.
+process.env.NEXT_PUBLIC_API_URL = 'http://127.0.0.1:8000/api/v1';
+configureApiClient(
+  {
+    getAccessToken: () => 'test-access-token',
+    getRefreshToken: () => null,
+    setTokens: async () => {},
+    clearTokens: async () => {},
+  },
+  () => {},
+);
 
 // ─── MSW server lifecycle ─────────────────────────────────────────────────────
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));

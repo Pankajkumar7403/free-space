@@ -1,9 +1,9 @@
 // 📍 LOCATION: free-space/frontend/apps/web/src/app/(main)/feed/page.tsx
-//
-// Home feed page — Sprint 3 will build FeedList + PostCard here.
-// For now: layout stub so routing works end-to-end.
+// Home feed page (Sprint 5 shell): renders feed list with
+// loading/empty/error handled in FeedList.
 
 import type { Metadata } from 'next';
+import { FeedList } from '@/components/features/feed/FeedList';
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -11,10 +11,8 @@ export const metadata: Metadata = {
 
 export default function FeedPage() {
   return (
-    <div className="feed-container py-6">
-      <p className="text-center text-muted-foreground text-sm py-20">
-        Feed coming in Sprint 3 🏳️‍🌈
-      </p>
+    <div className="mx-auto w-full max-w-[680px] px-0 sm:px-4 py-4 sm:py-6">
+      <FeedList />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   // Best-effort: call backend logout even if we don't have the token
   if (refreshToken) {
     try {
-      await fetch(`${API_INTERNAL}/users/auth/logout/`, {
+      await fetch(`${API_INTERNAL}/users/logout/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh: refreshToken }),

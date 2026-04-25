@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { FollowButton } from './FollowButton';
 import { useAuthStore } from '@/stores/authStore';
-import { useBlockUser, useMuteUser } from '@qommunity/hooks';
+import { useBlockUser, useMuteUser } from '@/hooks';
 import { useToast } from '@/components/ui/Toast';
 
 interface ProfileHeaderProps {

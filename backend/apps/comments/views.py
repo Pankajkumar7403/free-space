@@ -31,10 +31,57 @@ from apps.comments.services import (
 from core.pagination.cursor import CursorPagination
 
 
+class CommentListCreateView(APIView):
+    """
+    GET  /api/v1/comments/?post_id=<uuid>  → paginated top-level comments for a post
+    POST /api/v1/comments/                 → create a comment (post_id in request body)
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        post_id = request.query_params.get("post_id")
+        if not post_id:
+            return Response(
+                {"detail": "post_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = get_top_level_comments(post_id=post_id)
+        total = get_comment_count(post_id=post_id)
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(qs, request)
+        data = CommentSerializer(page, many=True).data
+        response = paginator.get_paginated_response(data)
+        response.data["total"] = total
+        return response
+
+    def post(self, request: Request) -> Response:
+        post_id = request.data.get("post_id")
+        if not post_id:
+            return Response(
+                {"detail": "post_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = CreateCommentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+
+        comment = create_comment(
+            CreateCommentInput(
+                post_id=post_id,
+                author_id=request.user.pk,
+                content=d["content"],
+                parent_id=d.get("parent_id"),
+            )
+        )
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+
 class PostCommentListCreateView(APIView):
     """
-    GET  /api/v1/posts/<post_id>/comments/   → paginated top-level comments
-    POST /api/v1/posts/<post_id>/comments/   → create a comment or reply
+    Legacy nested view kept for internal compatibility.
+    GET  /api/v1/posts/<post_id>/comments/
+    POST /api/v1/posts/<post_id>/comments/
     """
 
     permission_classes = [IsAuthenticated]

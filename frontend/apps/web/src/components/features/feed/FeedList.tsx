@@ -1,30 +1,56 @@
 // 📍 LOCATION: free-space/frontend/apps/web/src/components/features/feed/FeedList.tsx
 //
-// FeedList — renders the home feed as an infinite-scroll list of PostCards.
-//
-// Data flow:
-//   1. useHomeFeed() fetches page 1 from /api/v1/feed/
-//   2. IntersectionObserver sentinel triggers fetchNextPage() when scrolled near bottom
-//   3. New pages append to the existing list without re-rendering previous items
-//   4. Each PostCard receives a single Post prop — no prop drilling beyond that
-//
-// Error and empty states are handled here, not in PostCard.
+// Feed list variants share one implementation (FeedListView):
+//   - Home: useHomeFeed → /api/v1/feed/
+//   - Explore: useExploreFeed → /api/v1/feed/explore/
+//   - Hashtag: useHashtagFeed(tag) → /api/v1/feed/hashtag/{tag}/
 
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
-import { useHomeFeed, flattenFeedPages } from '@qommunity/hooks';
+import { useRef, useEffect } from 'react';
+import {
+  useHomeFeed,
+  useExploreFeed,
+  useHashtagFeed,
+  flattenFeedPages,
+} from '@/hooks';
 import { PostCard } from './PostCard';
 import { FeedSkeleton } from './PostCardSkeleton';
 import { EmptyFeed } from './EmptyFeed';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/Button';
 
-interface FeedListProps {
+/** Shared slice of infinite feed query state (home / explore / hashtag). */
+export type InfiniteFeedQuery = Pick<
+  ReturnType<typeof useHomeFeed>,
+  | 'data'
+  | 'isLoading'
+  | 'isError'
+  | 'isFetchingNextPage'
+  | 'hasNextPage'
+  | 'fetchNextPage'
+  | 'refetch'
+>;
+
+interface FeedListViewProps {
+  query: InfiniteFeedQuery;
   onCommentClick?: (postId: string) => void;
+  /** Accessible label for the feed region */
+  ariaLabel: string;
+  /** Optional empty state (e.g. explore / hashtag); home feed uses EmptyFeed defaults */
+  emptyTitle?: string;
+  emptyMessage?: string;
+  emptyShowCta?: boolean;
 }
 
-export function FeedList({ onCommentClick }: FeedListProps) {
+export function FeedListView({
+  query,
+  onCommentClick,
+  ariaLabel,
+  emptyTitle,
+  emptyMessage,
+  emptyShowCta,
+}: FeedListViewProps) {
   const {
     data,
     isLoading,
@@ -33,11 +59,10 @@ export function FeedList({ onCommentClick }: FeedListProps) {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useHomeFeed();
+  } = query;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // ── IntersectionObserver: load next page when sentinel is visible ──────────
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasNextPage || isFetchingNextPage) return;
@@ -50,7 +75,7 @@ export function FeedList({ onCommentClick }: FeedListProps) {
       },
       {
         threshold: 0.1,
-        rootMargin: '300px', // Pre-fetch 300px before user reaches bottom
+        rootMargin: '300px',
       },
     );
 
@@ -60,12 +85,10 @@ export function FeedList({ onCommentClick }: FeedListProps) {
 
   const posts = flattenFeedPages(data);
 
-  // ── Loading state (first page) ─────────────────────────────────────────────
   if (isLoading) {
     return <FeedSkeleton count={4} />;
   }
 
-  // ── Error state ────────────────────────────────────────────────────────────
   if (isError) {
     return (
       <div className="flex flex-col items-center py-20 gap-4 text-center px-4">
@@ -73,18 +96,23 @@ export function FeedList({ onCommentClick }: FeedListProps) {
         <p className="text-sm text-muted-foreground">
           Something went wrong. Please check your connection and try again.
         </p>
-        <button
-          onClick={() => void refetch()}
-          className="rounded-lg px-4 py-2 text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
-        >
+        <Button type="button" variant="default" onClick={() => void refetch()}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
 
-  // ── Empty state ────────────────────────────────────────────────────────────
   if (posts.length === 0) {
+    if (emptyMessage !== undefined || emptyTitle !== undefined) {
+      return (
+        <EmptyFeed
+          title={emptyTitle ?? 'Nothing to show yet'}
+          message={emptyMessage ?? 'Try again later or explore other tags.'}
+          showCta={emptyShowCta ?? true}
+        />
+      );
+    }
     return <EmptyFeed />;
   }
 
@@ -92,27 +120,21 @@ export function FeedList({ onCommentClick }: FeedListProps) {
     <div
       className="w-full"
       role="feed"
-      aria-label="Home feed"
+      aria-label={ariaLabel}
       aria-busy={isFetchingNextPage}
     >
       {posts.map((item) => (
         <PostCard
-          key={item.post.id}
-          post={item.post}
+          key={item.id}
+          post={item}
           onCommentClick={onCommentClick}
         />
       ))}
 
-      {/* Sentinel element — triggers next page load when visible */}
       {hasNextPage && (
-        <div
-          ref={sentinelRef}
-          className="h-4"
-          aria-hidden="true"
-        />
+        <div ref={sentinelRef} className="h-4" aria-hidden="true" />
       )}
 
-      {/* Loading spinner for subsequent pages */}
       {isFetchingNextPage && (
         <div
           className="flex justify-center py-8"
@@ -126,14 +148,59 @@ export function FeedList({ onCommentClick }: FeedListProps) {
         </div>
       )}
 
-      {/* End of feed message */}
       {!hasNextPage && posts.length > 0 && (
         <div className="py-12 text-center">
           <p className="text-xs text-muted-foreground select-none">
-            You are all caught up! Check back later. 🏳️‍🌈
+            You are all caught up! Check back later.
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+interface FeedListProps {
+  onCommentClick?: (postId: string) => void;
+}
+
+export function FeedList({ onCommentClick }: FeedListProps) {
+  const query = useHomeFeed();
+  return (
+    <FeedListView
+      query={query}
+      onCommentClick={onCommentClick}
+      ariaLabel="Home feed"
+    />
+  );
+}
+
+export function ExploreFeedList({ onCommentClick }: FeedListProps) {
+  const query = useExploreFeed();
+  return (
+    <FeedListView
+      query={query}
+      onCommentClick={onCommentClick}
+      ariaLabel="Explore feed"
+      emptyTitle="Explore is quiet"
+      emptyMessage="No posts here yet. Check back soon."
+    />
+  );
+}
+
+interface HashtagFeedListProps extends FeedListProps {
+  tag: string;
+}
+
+export function HashtagFeedList({ tag, onCommentClick }: HashtagFeedListProps) {
+  const query = useHashtagFeed(tag);
+  return (
+    <FeedListView
+      query={query}
+      onCommentClick={onCommentClick}
+      ariaLabel={`Posts tagged ${tag}`}
+      emptyTitle={`#${tag}`}
+      emptyMessage={`No posts for #${tag} yet.`}
+      emptyShowCta
+    />
   );
 }

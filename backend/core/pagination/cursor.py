@@ -88,15 +88,3 @@ class CursorPagination(DRFCursorPagination):
                 },
             },
         }
-
-
-class FeedCursorPagination(CursorPagination):
-    """
-    Feed-specific paginator.
-
-    The feed is ordered by score (ranking), not created_at, so we use
-    a composite cursor of (score DESC, id ASC) for stable ordering.
-    """
-
-    ordering = "-score"
-    page_size = 20

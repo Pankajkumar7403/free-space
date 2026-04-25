@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import type { AuthenticatedUser } from '@qommunity/types';
 
 const COOKIE_NAME   = 'qommunity_refresh';
-const API_INTERNAL  = process.env.API_INTERNAL_URL ?? 'http://localhost:8000/api/v1';
+const API_INTERNAL  = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:8000/api/v1';
 
 interface RefreshResponse {
   access: string;
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Step 1: Exchange refresh token for new access token
-    const refreshRes = await fetch(`${API_INTERNAL}/users/auth/token/refresh/`, {
+    const refreshRes = await fetch(`${API_INTERNAL}/users/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),

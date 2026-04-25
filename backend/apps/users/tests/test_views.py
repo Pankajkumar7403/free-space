@@ -23,8 +23,9 @@ class TestRegisterView(BaseAPITestCase):
         )
         self.assert_created(res)
         assert res.data["user"]["email"] == "new@example.com"
-        assert "access" in res.data
-        assert "refresh" in res.data
+        assert "tokens" in res.data
+        assert "access" in res.data["tokens"]
+        assert "refresh" in res.data["tokens"]
 
     def test_register_duplicate_email(self):
         UserFactory(email="dup@example.com")
@@ -61,8 +62,9 @@ class TestLoginView(BaseAPITestCase):
             self.url, {"email": self.user.email, "password": "mypassword"}
         )
         self.assert_ok(res)
-        assert "access" in res.data
-        assert "refresh" in res.data
+        assert "tokens" in res.data
+        assert "access" in res.data["tokens"]
+        assert "refresh" in res.data["tokens"]
 
     def test_login_wrong_password(self):
         res = self.client.post(
@@ -89,6 +91,24 @@ class TestMeView(BaseAPITestCase):
     def test_unauthenticated_returns_401(self):
         res = self.client.get(self.url)
         self.assert_unauthorized(res)
+
+
+class TestRecoveryAndOAuthRoutes(BaseAPITestCase):
+    def test_forgot_password_is_public_and_not_caught_by_username_route(self):
+        res = self.client.post(
+            "/api/v1/users/forgot-password/",
+            {"email": "unknown@example.com"},
+        )
+        self.assert_ok(res)
+        assert res.data["ok"] is True
+
+    def test_oauth_init_route_exists(self):
+        res = self.client.get(
+            "/api/v1/users/oauth/google/init/",
+            {"redirect_uri": "http://localhost:3000/api/auth/oauth/callback?provider=google&callbackUrl=%2Ffeed"},
+        )
+        # Config may be missing in local dev, but route must not be 404.
+        assert res.status_code in {200, 401}
 
 
 class TestUserDetailView(BaseAPITestCase):

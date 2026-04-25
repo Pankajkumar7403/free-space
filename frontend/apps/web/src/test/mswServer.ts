@@ -6,10 +6,12 @@
 
 import { setupServer } from 'msw/node';
 import { authHandlers } from './handlers/authHandlers';
+import { postHandlers } from './handlers/postHandlers';
 import { userHandlers } from './handlers/userHandlers';
 
 // Default handlers — active in all tests
 export const server = setupServer(
   ...authHandlers,
+  ...postHandlers,
   ...userHandlers,
 );

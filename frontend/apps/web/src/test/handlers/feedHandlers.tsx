@@ -1,24 +1,18 @@
 // 📍 LOCATION: free-space/frontend/apps/web/src/test/handlers/feedHandlers.ts
 
 import { http, HttpResponse } from 'msw';
-import { mockPost, mockUserSummary } from '../factories';
+import { mockPost } from '../factories';
 import type { FeedPage } from '@qommunity/types';
 
 const API = 'http://localhost:8000/api/v1';
 
 function makeFeedPage(cursor?: string): FeedPage {
-  const posts = Array.from({ length: 5 }, () => ({
-    id:        `feed-item-${Math.random().toString(36).slice(2, 9)}`,
-    post:      mockPost(),
-    score:     Math.random() * 100,
-    source:    'follow' as const,
-    timestamp: new Date().toISOString(),
-  }));
+  const posts = Array.from({ length: 5 }, () => mockPost());
 
   return {
-    results:  posts,
-    next:     cursor === 'page2' ? null : 'page2',
-    previous: null,
+    results: posts,
+    next_cursor: cursor === '5' ? null : 5,
+    source: 'db',
   };
 }
 

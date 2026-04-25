@@ -5,6 +5,7 @@
 // Providers are in src/components/providers/AppProviders.tsx (client boundary).
 
 import type { Metadata, Viewport } from 'next';
+import type { ReactNode } from 'react';
 import { Sora, DM_Sans, JetBrains_Mono } from 'next/font/google';
 
 import { AppProviders } from '@/components/providers/AppProviders';
@@ -76,10 +77,7 @@ export const metadata: Metadata = {
   // PWA manifest
   manifest: '/manifest.json',
   icons: {
-    icon: [
-      { url: '/favicon-16.png', sizes: '16x16' },
-      { url: '/favicon-32.png', sizes: '32x32' },
-    ],
+    icon: '/icon.svg',
     apple: '/apple-touch-icon.png',
   },
 
@@ -106,7 +104,7 @@ export const viewport: Viewport = {
 };
 
 // ─── Root layout ─────────────────────────────────────────────────────────────
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
   return (
     <html
       lang="en"

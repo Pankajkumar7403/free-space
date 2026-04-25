@@ -16,7 +16,7 @@ import Link from 'next/link';
 import {
   forgotPasswordSchema, type ForgotPasswordFormValues,
   resetPasswordSchema,  type ResetPasswordFormValues,
-} from '@qommunity/validators';
+} from '@/lib/validators';
 import { authApi } from '@qommunity/api-client';
 import { ApiException } from '@qommunity/types';
 

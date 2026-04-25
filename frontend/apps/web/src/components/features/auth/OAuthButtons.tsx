@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -10,17 +10,31 @@ interface OAuthButtonsProps {
   callbackUrl: string;
 }
 
-export function OAuthButtons({ callbackUrl }: OAuthButtonsProps) {
+export function OAuthButtons({ callbackUrl }: OAuthButtonsProps): ReactElement {
   const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     setLoading(provider);
-    // Redirect to backend OAuth2 initiation endpoint
-    // Backend: GET /api/v1/users/auth/oauth/{provider}/init/?redirect_uri=...
-    const redirectUri = encodeURIComponent(
-      `${window.location.origin}/api/auth/oauth/callback?provider=${provider}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
-    );
-    window.location.href = `/api/v1/users/auth/oauth/${provider}/init/?redirect_uri=${redirectUri}`;
+    try {
+      // Redirect to backend OAuth2 initiation endpoint.
+      // Keep OAuth redirect URI stable and exactly registered in provider console.
+      // Post-login destination is handled by the callback route (defaults to /feed).
+      const redirectUri = `${window.location.origin}/api/auth/oauth/callback?provider=${provider}`;
+      const initRes = await fetch(
+        `/api/auth/oauth/init?provider=${provider}&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        { method: 'GET' },
+      );
+      if (!initRes.ok) {
+        throw new Error(`OAuth init failed (${initRes.status})`);
+      }
+      const payload = (await initRes.json()) as { url?: string };
+      if (!payload.url) {
+        throw new Error('OAuth init URL missing.');
+      }
+      window.location.href = payload.url;
+    } catch {
+      setLoading(null);
+    }
   };
 
   return (

@@ -8,8 +8,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
+import { authApi } from '@qommunity/api-client';
+
 import { server } from '@/test/mswServer';
 import { LoginForm } from '../LoginForm';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api/v1';
 
 // ─── Render helpers ────────────────────────────────────────────────────────────
 function renderLoginForm() {
@@ -25,7 +29,7 @@ describe('LoginForm', () => {
       renderLoginForm();
 
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
     });
 
@@ -48,7 +52,9 @@ describe('LoginForm', () => {
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toHaveTextContent(/valid email/i);
+        expect(
+          screen.getByText(/please enter a valid email address/i),
+        ).toBeInTheDocument();
       });
     });
 
@@ -64,16 +70,13 @@ describe('LoginForm', () => {
     });
 
     it('does not submit when fields are empty', async () => {
-      const fetchSpy = vi.spyOn(global, 'fetch');
+      const loginSpy = vi.spyOn(authApi, 'login');
       renderLoginForm();
 
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-      // No API calls should be made on validation failure
-      expect(fetchSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('/auth/login'),
-        expect.anything(),
-      );
+      expect(loginSpy).not.toHaveBeenCalled();
+      loginSpy.mockRestore();
     });
   });
 
@@ -96,7 +99,7 @@ describe('LoginForm', () => {
     it('shows loading state while submitting', async () => {
       // Delay the response to see the loading state
       server.use(
-        http.post('http://localhost:8000/api/v1/users/auth/login/', async () => {
+        http.post(`${API}/users/login/`, async () => {
           await new Promise((r) => setTimeout(r, 100));
           return HttpResponse.json({ user: {}, tokens: {} });
         }),
@@ -114,12 +117,14 @@ describe('LoginForm', () => {
 
     it('shows server error message on failed login', async () => {
       server.use(
-        http.post('http://localhost:8000/api/v1/users/auth/login/', () =>
+        http.post(`${API}/users/login/`, () =>
           HttpResponse.json(
             {
-              error_code: 'AUTHENTICATION_FAILED',
-              message:    'Invalid email or password.',
-              details:    {},
+              error: {
+                code: 'AUTHENTICATION_FAILED',
+                message: 'Invalid email or password.',
+                detail: {},
+              },
             },
             { status: 401 },
           ),
@@ -138,12 +143,14 @@ describe('LoginForm', () => {
 
     it('maps field-level validation errors from server to form fields', async () => {
       server.use(
-        http.post('http://localhost:8000/api/v1/users/auth/login/', () =>
+        http.post(`${API}/users/login/`, () =>
           HttpResponse.json(
             {
-              error_code: 'VALIDATION_ERROR',
-              message:    'Validation failed.',
-              details:    { email: ['Enter a valid email address.'] },
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Validation failed.',
+                detail: { email: ['Enter a valid email address.'] },
+              },
             },
             { status: 400 },
           ),

@@ -12,12 +12,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 const PROTECTED_ROUTES = [
   '/feed',
   '/explore',
+  '/hashtag',
+  '/bookmarks',
   '/notifications',
   '/settings',
   '/create',
 ];
 
-/** Routes only for unauthenticated users — redirect to /feed if already authed */
+/** Routes that are publicly accessible regardless of cookie state */
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 /** Public routes — accessible regardless of auth state */
@@ -30,11 +32,10 @@ export function middleware(request: NextRequest) {
   // Actual validity is checked by the AuthProvider on mount
   const hasSession = request.cookies.has('qommunity_refresh');
 
-  // ── Redirect authenticated users away from auth pages ─────────────────────
+  // ── Auth pages are always allowed at middleware level ─────────────────────
+  // We avoid cookie-only redirects here because stale/invalid cookies can trap
+  // users in redirect loops; AuthProvider performs state-aware redirects.
   if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (hasSession) {
-      return NextResponse.redirect(new URL('/feed', request.url));
-    }
     return NextResponse.next();
   }
 

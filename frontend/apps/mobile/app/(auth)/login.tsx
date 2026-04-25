@@ -16,7 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
 
-import { loginSchema, type LoginFormValues } from '@qommunity/validators';
+import { loginSchema, type LoginFormValues } from '@/lib/validators';
 import { authApi } from '@qommunity/api-client';
 import { ApiException } from '@qommunity/types';
 

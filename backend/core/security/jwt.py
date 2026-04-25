@@ -64,10 +64,14 @@ def decode_access_token(token: str) -> dict[str, Any]:
         raise AuthenticationError(message=str(exc)) from exc
 
 
-def blacklist_refresh_token(refresh_token_str: str) -> None:
+
+def blacklist_refresh_token(refresh_token: str) -> None:
     """
-    Add a refresh token to the blacklist (called on logout).
-    Uses our Redis blacklist for instant revocation.
+    Blacklist a refresh token so it can no longer be used.
+
+    Raises
+    ------
+    core.exceptions.base.AuthenticationError  on invalid token
     """
     from rest_framework_simplejwt.exceptions import TokenError  # type: ignore[import]
     from rest_framework_simplejwt.tokens import RefreshToken  # type: ignore[import]
@@ -75,15 +79,8 @@ def blacklist_refresh_token(refresh_token_str: str) -> None:
     from core.exceptions.base import AuthenticationError
 
     try:
-        token = RefreshToken(cast(Any, refresh_token_str))
-        jti = token.payload.get("jti")
-        if jti:
-            from core.redis.cache import blacklist_token
-
-            remaining_ttl = int(
-                token.payload.get("exp", 0) - token.payload.get("iat", 0)
-            )
-            blacklist_token(jti, ttl=max(remaining_ttl, 1))
+        token = RefreshToken(refresh_token)
+        token.blacklist()
     except TokenError as exc:
         raise AuthenticationError(message=str(exc)) from exc
 

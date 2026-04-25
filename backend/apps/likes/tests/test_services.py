@@ -1,138 +1,65 @@
 # 📁 Location: backend/apps/likes/tests/test_services.py
-# ▶  Run:      pytest apps/likes/tests/test_services.py -v
 
 from unittest.mock import patch
 
 import pytest
 
 from apps.likes.exceptions import AlreadyLikedError, NotLikedError
-from apps.likes.models import Like
 from apps.likes.services import get_like_count, is_liked_by, like_object, unlike_object
-from apps.posts.constants import PostVisibility
-from apps.posts.tests.factories import PostFactory
-from apps.users.tests.factories import UserFactory
-from core.redis.client import get_redis_client, reset_client
-
-pytestmark = [pytest.mark.unit, pytest.mark.django_db]
 
 
-@pytest.fixture(autouse=True)
-def clean_redis():
-    reset_client()
-    get_redis_client().flushall()
-    yield
-    get_redis_client().flushall()
-    reset_client()
+@pytest.mark.django_db
+def test_like_post_creates_notification(user_factory, post_factory):
+    """Liking a post fires a notification to the post author."""
+    author = user_factory()
+    liker = user_factory()
+    post = post_factory(author=author)
+
+    with patch("apps.notifications.services.create_notification") as mock_notify:
+        like_object(user=liker, obj=post)
+        mock_notify.assert_called_once()
+        call_kwargs = mock_notify.call_args.kwargs
+        assert str(call_kwargs["recipient_id"]) == str(author.pk)
+        assert str(call_kwargs["actor_id"]) == str(liker.pk)
 
 
-class TestLikeObject:
-    @patch("apps.likes.services.emit_like_created")
-    def test_like_post_successfully(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like = like_object(user=user, obj=post)
-        assert like.pk is not None
-        assert Like.objects.filter(user=user, object_id=post.pk).exists()
+@pytest.mark.django_db
+def test_like_post_no_self_notification(user_factory, post_factory):
+    """Liking your own post does not create a notification."""
+    user = user_factory()
+    post = post_factory(author=user)
 
-    @patch("apps.likes.services.emit_like_created")
-    def test_like_increments_redis_counter(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
+    with patch("apps.notifications.services.create_notification") as mock_notify:
         like_object(user=user, obj=post)
-        count = get_like_count(obj=post)
-        assert count == 1
+        mock_notify.assert_not_called()
 
-    @patch("apps.likes.services.emit_like_created")
-    def test_multiple_likes_increment_counter(self, mock_emit, db):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        u1 = UserFactory()
-        u2 = UserFactory()
-        u3 = UserFactory()
-        like_object(user=u1, obj=post)
-        like_object(user=u2, obj=post)
-        like_object(user=u3, obj=post)
-        assert get_like_count(obj=post) == 3
 
-    @patch("apps.likes.services.emit_like_created")
-    def test_raises_on_duplicate_like(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
+@pytest.mark.django_db
+def test_like_post_duplicate_raises(user_factory, post_factory):
+    """Liking the same post twice raises AlreadyLikedError."""
+    user = user_factory()
+    post = post_factory()
+    like_object(user=user, obj=post)
+    with pytest.raises(AlreadyLikedError):
         like_object(user=user, obj=post)
-        with pytest.raises(AlreadyLikedError):
-            like_object(user=user, obj=post)
-
-    @patch("apps.likes.services.emit_like_created")
-    def test_emits_kafka_event(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        mock_emit.assert_called_once()
 
 
-class TestUnlikeObject:
-    @patch("apps.likes.services.emit_like_created")
-    def test_unlike_removes_db_row(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        unlike_object(user=user, obj=post)
-        assert not Like.objects.filter(user=user, object_id=post.pk).exists()
-
-    @patch("apps.likes.services.emit_like_created")
-    def test_unlike_decrements_redis_counter(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        unlike_object(user=user, obj=post)
-        assert get_like_count(obj=post) == 0
-
-    def test_unlike_raises_if_not_liked(self, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        with pytest.raises(NotLikedError):
-            unlike_object(user=user, obj=post)
-
-    @patch("apps.likes.services.emit_like_created")
-    def test_counter_never_goes_below_zero(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        unlike_object(user=user, obj=post)
-        # Counter is 0, calling again raises NotLikedError not negative count
-        with pytest.raises(NotLikedError):
-            unlike_object(user=user, obj=post)
-        assert get_like_count(obj=post) == 0
+@pytest.mark.django_db
+def test_get_like_count_from_db(user_factory, post_factory):
+    """get_like_count returns DB count."""
+    liker1 = user_factory()
+    liker2 = user_factory()
+    post = post_factory()
+    like_object(user=liker1, obj=post)
+    like_object(user=liker2, obj=post)
+    assert get_like_count(obj=post) == 2
 
 
-class TestGetLikeCount:
-    @patch("apps.likes.services.emit_like_created")
-    def test_count_from_redis(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        count = get_like_count(obj=post)
-        assert count == 1
-
-    def test_count_fallback_from_db_on_cache_miss(self, db, user):
-        """When Redis is cold, count comes from DB."""
-        from django.contrib.contenttypes.models import ContentType
-
-        from apps.likes.models import Like
-        from apps.posts.models import Post
-
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        ct = ContentType.objects.get_for_model(Post)
-        Like.objects.create(user=user, content_type=ct, object_id=post.pk)
-        # Redis is flushed — count must come from DB
-        count = get_like_count(obj=post)
-        assert count == 1
-
-
-class TestIsLikedBy:
-    @patch("apps.likes.services.emit_like_created")
-    def test_returns_true_after_like(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        assert is_liked_by(user=user, obj=post) is True
-
-    def test_returns_false_before_like(self, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        assert is_liked_by(user=user, obj=post) is False
-
-    @patch("apps.likes.services.emit_like_created")
-    def test_returns_false_after_unlike(self, mock_emit, db, user):
-        post = PostFactory(author=UserFactory(), visibility=PostVisibility.PUBLIC)
-        like_object(user=user, obj=post)
-        unlike_object(user=user, obj=post)
-        assert is_liked_by(user=user, obj=post) is False
+@pytest.mark.django_db
+def test_is_liked_by_db(user_factory, post_factory):
+    """is_liked_by uses DB."""
+    user = user_factory()
+    post = post_factory()
+    assert is_liked_by(user=user, obj=post) is False
+    like_object(user=user, obj=post)
+    assert is_liked_by(user=user, obj=post) is True

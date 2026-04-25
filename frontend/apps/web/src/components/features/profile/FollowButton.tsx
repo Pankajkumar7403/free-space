@@ -12,9 +12,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, UserCheck, UserMinus, UserPlus, Clock } from 'lucide-react';
 
-import { useFollowUser, useUnfollowUser } from '@qommunity/hooks';
+import { useFollowUser, useUnfollowUser, queryKeys } from '@/hooks';
+import { usersApi } from '@qommunity/api-client';
 import type { User } from '@qommunity/types';
 
 import { useAuthStore } from '@/stores/authStore';
@@ -36,8 +38,18 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
 
   const [isHoveringFollow, setIsHoveringFollow] = useState(false);
 
+  // Profile query merges server fetches with optimistic follow/unfollow cache updates.
+  const { data: profile = user } = useQuery({
+    queryKey: queryKeys.users.profile(user.username),
+    queryFn: () => usersApi.getProfile(user.username),
+    initialData: user,
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
   // Own profile — render edit button instead
-  if (currentUser?.username === user.username) {
+  if (currentUser?.username === profile.username) {
     return (
       <Button
         variant="outline"
@@ -53,7 +65,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
   const isPending = followUser.isPending || unfollowUser.isPending;
 
   const handleFollow = () => {
-    followUser.mutate(user.username, {
+    followUser.mutate(profile.username, {
       onError: () => {
         toast({
           title: 'Could not follow',
@@ -65,7 +77,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
   };
 
   const handleUnfollow = () => {
-    unfollowUser.mutate(user.username, {
+    unfollowUser.mutate(profile.username, {
       onError: () => {
         toast({
           title: 'Could not unfollow',
@@ -77,7 +89,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
   };
 
   // ── State: Following ──────────────────────────────────────────────────────
-  if (user.is_following) {
+  if (profile.is_following) {
     return (
       <Button
         variant="outline"
@@ -111,7 +123,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
   }
 
   // ── State: Follow requested (private account) ─────────────────────────────
-  if (user.follow_request_sent) {
+  if (profile.follow_request_sent) {
     return (
       <Button
         variant="outline"
@@ -119,7 +131,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
         className={cn('min-w-[100px]', className)}
         disabled={isPending}
         onClick={handleUnfollow} // cancels the request
-        aria-label="Follow request sent, click to cancel"
+        aria-label="Requested — cancel follow request"
       >
         {isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -140,7 +152,7 @@ export function FollowButton({ user, size = 'default', className }: FollowButton
       className={cn('min-w-[100px]', className)}
       disabled={isPending}
       onClick={handleFollow}
-      aria-label={`Follow ${user.display_name}`}
+      aria-label={`Follow ${profile.display_name}`}
     >
       {isPending ? (
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

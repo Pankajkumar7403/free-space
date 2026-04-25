@@ -12,11 +12,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2, ChevronDown, Info } from 'lucide-react';
 
-import { registerSchema, type RegisterFormValues } from '@qommunity/validators';
+import { registerSchema, type RegisterFormValues } from '@/lib/validators';
 import { PRONOUNS, GENDER_IDENTITY, SEXUAL_ORIENTATION, ApiException } from '@qommunity/types';
 import { authApi } from '@qommunity/api-client';
 
 import { useAuthStore } from '@/stores/authStore';
+import { persistRefreshToken } from '@/lib/session';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -64,9 +65,9 @@ export function RegisterForm() {
         sexual_orientation: values.sexual_orientation,
       });
 
-      setAuth(user, tokens.access);
-
       await persistRefreshToken(tokens.refresh);
+
+      setAuth(user, tokens.access);
 
       // Redirect to email verification
       router.push('/verify-email');
@@ -80,6 +81,8 @@ export function RegisterForm() {
         } else {
           setServerError(error.message);
         }
+      } else if (error instanceof Error) {
+        setServerError(error.message);
       } else {
         setServerError('Something went wrong. Please try again.');
       }

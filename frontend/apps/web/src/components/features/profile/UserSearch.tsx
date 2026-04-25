@@ -10,7 +10,7 @@ import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Search, Loader2, X } from 'lucide-react';
 
-import { useUserSearch, flattenUserPages } from '@qommunity/hooks';
+import { useUserSearch, flattenUserPages } from '@/hooks';
 import type { UserSummary } from '@qommunity/types';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';

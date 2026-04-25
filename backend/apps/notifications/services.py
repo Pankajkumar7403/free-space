@@ -60,16 +60,12 @@ def create_notification(
     1. Resolve actor username for the message text.
     2. Resolve ContentType for target_content_type_label (if provided).
     3. Persist Notification row.
-    4. dispatch_notification() → WebSocket (sync) + FCM/Email (Celery tasks).
-    5. Invalidate Redis unread count cache.
 
     Returns None if any required field is missing or the actor == recipient.
     """
     # Never notify users about their own actions
     if actor_id and str(actor_id) == str(recipient_id):
         return None
-
-    from apps.notifications.dispatchers import dispatch_notification
 
     actor_username = _resolve_actor_username(actor_id)
     message = _TEMPLATES.get(notification_type, "You have a new notification").format(
@@ -95,10 +91,6 @@ def create_notification(
             object_id=target_id,
             message=message,
         )
-        # Invalidate cached count after commit
-        transaction.on_commit(lambda: _invalidate_unread_cache(recipient_id))
-
-    dispatch_notification(notification)
 
     logger.info(
         "notification.created",
@@ -123,7 +115,6 @@ def mark_notification_read(
         notification.is_read = True
         notification.read_at = timezone.now()
         notification.save(update_fields=["is_read", "read_at"])
-        _invalidate_unread_cache(user_id)
 
     return notification
 
@@ -134,9 +125,6 @@ def mark_all_notifications_read(*, user_id: uuid.UUID) -> int:
         recipient_id=user_id,
         is_read=False,
     ).update(is_read=True, read_at=timezone.now())
-
-    if count > 0:
-        _invalidate_unread_cache(user_id)
 
     return count
 
@@ -204,14 +192,3 @@ def _resolve_actor_username(actor_id: uuid.UUID | None) -> str | None:
         return None
 
 
-def _invalidate_unread_cache(user_id: uuid.UUID) -> None:
-    from apps.notifications.constants import UNREAD_COUNT_REDIS_KEY
-    from core.redis.client import get_redis_client
-
-    try:
-        get_redis_client().delete(UNREAD_COUNT_REDIS_KEY.format(user_id=user_id))
-    except Exception as exc:
-        logger.warning(
-            "notification.cache_invalidation_failed",
-            extra={"user_id": str(user_id), "error": str(exc)},
-        )

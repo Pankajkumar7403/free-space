@@ -1,15 +1,11 @@
-# 📁 Location: backend/apps/feed/services.py
-
 from __future__ import annotations
 
 import logging
 
 from django.db import transaction
 
-from apps.feed.cache import explore_push
 from apps.feed.models import HashtagSubscription
-from apps.feed.ranking import recency_score
-from apps.posts.models import Hashtag, Post
+from apps.posts.models import Hashtag
 from apps.users.selectors import get_user_by_id
 
 logger = logging.getLogger(__name__)
@@ -33,38 +29,3 @@ def unsubscribe_from_hashtag(*, user_id, hashtag_name: str) -> None:
     HashtagSubscription.objects.filter(
         user=user, hashtag__name=hashtag_name.lower()
     ).delete()
-
-
-def push_post_to_explore(*, post: Post) -> None:
-    """
-    Add a public post to the global explore feed with a recency score.
-    Called after post creation if visibility=PUBLIC.
-    """
-    if post.visibility != "public":
-        return
-    score = recency_score(post.created_at)
-    explore_push(str(post.id), score)
-    logger.debug("push_post_to_explore: post=%s score=%s", post.id, score)
-
-
-def on_user_login(*, user_id: str) -> None:
-    """
-    Hook called when a user logs in.
-    Triggers feed warm-up if their Redis feed is cold.
-    """
-    from apps.feed.cache import is_feed_warm
-    from apps.feed.tasks import warm_user_feed_task
-
-    if not is_feed_warm(user_id):
-        warm_user_feed_task.delay(user_id=user_id)
-        logger.debug("on_user_login: triggered feed warm-up for user=%s", user_id)
-
-
-def on_user_unfollow(*, follower_id: str) -> None:
-    """
-    Hook called when a user unfollows someone.
-    Invalidates their Redis feed so stale posts are removed.
-    """
-    from apps.feed.fanout import invalidate_user_feed
-
-    invalidate_user_feed(user_id=follower_id)

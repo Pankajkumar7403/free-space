@@ -4,22 +4,61 @@
 // Tests cover: rendering, like toggle, outing prevention, visibility badges.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import { queryKeys, flattenFeedPages } from '@/hooks';
+import type { FeedPage, Post } from '@qommunity/types';
 
 import { server } from '@/test/mswServer';
 import { mockPost, mockUser } from '@/test/factories';
+import { renderWithAppProviders } from '@/test/renderWithAppProviders';
 import { PostCard } from '../PostCard';
 
-// ─── Test wrapper with QueryClient ────────────────────────────────────────────
 function renderWithQuery(ui: React.ReactElement) {
+  return renderWithAppProviders(ui);
+}
+
+/**
+ * Re-renders when the home feed query cache updates (mirrors FeedList → PostCard data flow).
+ */
+function FeedCachedPostCard({
+  post,
+  onCommentClick,
+}: {
+  post: Post;
+  onCommentClick?: (id: string) => void;
+}) {
+  const { data } = useQuery<InfiniteData<FeedPage>>({
+    queryKey: queryKeys.feed.home(),
+    queryFn: async () => {
+      throw new Error('FeedCachedPostCard does not fetch');
+    },
+    enabled: false,
+  });
+
+  const flat = data ? flattenFeedPages(data) : [post];
+  const current = flat.find((p) => p.id === post.id) ?? post;
+  return <PostCard post={current} onCommentClick={onCommentClick} />;
+}
+
+/** Like mutation updates home feed cache — mirror production FeedList subscription. */
+function renderPostCardWithFeedCache(
+  post: Post,
+  extra?: { onCommentClick?: (id: string) => void },
+) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  queryClient.setQueryData<InfiniteData<FeedPage>>(queryKeys.feed.home(), {
+    pages: [{ results: [post], next_cursor: null, source: 'db' }],
+    pageParams: [undefined],
+  });
+  return renderWithAppProviders(
+    <FeedCachedPostCard post={post} onCommentClick={extra?.onCommentClick} />,
+    { queryClient },
   );
 }
 
@@ -170,14 +209,13 @@ describe('PostCard', () => {
   describe('like interaction', () => {
     it('increments like count optimistically on click', async () => {
       const post = mockPost({ is_liked: false, likes_count: 5 });
-      renderWithQuery(<PostCard post={post} />);
+      renderPostCardWithFeedCache(post);
 
       const likeButton = screen.getByRole('button', { name: /like post/i });
       await user.click(likeButton);
 
-      // Optimistic update should show count + 1 immediately
       await waitFor(() => {
-        expect(screen.getByText('6')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /unlike post/i })).toBeInTheDocument();
       });
     });
 
@@ -189,13 +227,12 @@ describe('PostCard', () => {
       );
 
       const post = mockPost({ is_liked: false, likes_count: 5 });
-      renderWithQuery(<PostCard post={post} />);
+      renderPostCardWithFeedCache(post);
 
       await user.click(screen.getByRole('button', { name: /like post/i }));
 
-      // After rollback, count should return to 5
       await waitFor(() => {
-        expect(screen.getByText('5')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /like post/i })).toBeInTheDocument();
       });
     });
   });

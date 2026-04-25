@@ -22,6 +22,12 @@ import uuid
 
 logger = logging.getLogger("qommunity.requests")
 
+_NOISE_PATH_SUFFIXES = (
+    "/favicon.ico",
+    "/favicon-16.png/",
+    "/favicon-32.png/",
+)
+
 
 class RequestLoggingMiddleware:
     """
@@ -52,6 +58,9 @@ class RequestLoggingMiddleware:
             if hasattr(request, "user") and request.user.is_authenticated
             else None
         )
+
+        if any(request.path.endswith(suffix) for suffix in _NOISE_PATH_SUFFIXES):
+            return response
 
         logger.info(
             "%(method)s %(path)s %(status)s %(duration_ms)sms",

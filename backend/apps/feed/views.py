@@ -1,5 +1,3 @@
-# 📁 Location: backend/apps/feed/views.py
-
 from __future__ import annotations
 
 from rest_framework import status
@@ -8,83 +6,52 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.feed.selectors import get_explore_feed, get_user_feed
-from apps.feed.services import (
-    subscribe_to_hashtag,
-    unsubscribe_from_hashtag,
-)
+from apps.feed.selectors import get_explore_feed, get_hashtag_feed, get_user_feed
+from apps.feed.services import subscribe_to_hashtag, unsubscribe_from_hashtag
 from apps.posts.serializers import PostListSerializer
+from core.pagination.cursor import CursorPagination
 
 
 class FeedView(APIView):
-    """
-    GET /api/v1/feed/
-    Returns the authenticated user's personalised ranked feed.
-    Supports cursor pagination via ?cursor=<int>
-    """
-
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
-        cursor = int(request.query_params.get("cursor", 0))
-        page_size = min(int(request.query_params.get("page_size", 20)), 50)
-
-        feed_page = get_user_feed(
-            user=request.user,
-            cursor=cursor,
-            page_size=page_size,
-        )
-
-        return Response(
-            {
-                "results": PostListSerializer(feed_page.posts, many=True).data,
-                "next_cursor": feed_page.next_cursor,
-                "source": feed_page.source,
-            }
-        )
+    def get(self, request: Request):
+        qs = get_user_feed(user=request.user)
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = PostListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class ExploreFeedView(APIView):
-    """
-    GET /api/v1/feed/explore/
-    Returns trending public posts from users the requester doesn't follow.
-    """
-
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
-        cursor = int(request.query_params.get("cursor", 0))
-        page_size = min(int(request.query_params.get("page_size", 20)), 50)
+    def get(self, request: Request):
+        qs = get_explore_feed(user=request.user)
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = PostListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
-        feed_page = get_explore_feed(
-            user=request.user,
-            cursor=cursor,
-            page_size=page_size,
-        )
 
-        return Response(
-            {
-                "results": PostListSerializer(feed_page.posts, many=True).data,
-                "next_cursor": feed_page.next_cursor,
-                "source": feed_page.source,
-            }
-        )
+class HashtagFeedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, name: str):
+        qs = get_hashtag_feed(user=request.user, hashtag_name=name)
+        paginator = CursorPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = PostListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class HashtagSubscriptionView(APIView):
-    """
-    POST   /api/v1/feed/hashtags/<name>/subscribe/
-    DELETE /api/v1/feed/hashtags/<name>/subscribe/
-    """
-
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, name: str) -> Response:
+    def post(self, request: Request, name: str):
         subscribe_to_hashtag(user_id=request.user.pk, hashtag_name=name)
-        return Response(
-            {"hashtag": name, "subscribed": True}, status=status.HTTP_201_CREATED
-        )
+        return Response({"hashtag": name, "subscribed": True}, status=status.HTTP_201_CREATED)
 
-    def delete(self, request: Request, name: str) -> Response:
+    def delete(self, request: Request, name: str):
         unsubscribe_from_hashtag(user_id=request.user.pk, hashtag_name=name)
         return Response(status=status.HTTP_204_NO_CONTENT)
